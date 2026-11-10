@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brian Chen · Projects</title>
+<meta name="description" content="Design write-ups of Brian Chen's projects.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column; each project is a block with its own list of pages. Same type family as the pages. */
+:root {
+  --paper: #f4f6f9; --surface: #ffffff; --ink: #142033; --muted: #586579; --line: #d6dce5;
+  --accent: #1d5bbf; --shield: #1c7444; --shield-soft: #e3f3e9; --trust: #a85a07; --trust-soft: #fcf0df;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e141e; --surface: #151d2a; --ink: #e4e9f1; --muted: #9aa6b9; --line: #2a3547;
+    --accent: #74a6f2; --shield: #63c891; --shield-soft: #142e1f; --trust: #e8a957; --trust-soft: #392914; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e141e; --surface: #151d2a; --ink: #e4e9f1; --muted: #9aa6b9; --line: #2a3547;
+  --accent: #74a6f2; --shield: #63c891; --shield-soft: #142e1f; --trust: #e8a957; --trust-soft: #392914; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--f-body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 56px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 .75rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1, h2 { font-family: var(--f-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+h2 { font-size: 1.6rem; }
+p { margin: 0; max-width: 66ch; }
+.lede { color: var(--muted); font-size: 1.08rem; }
+.project { display: grid; gap: 14px; padding-top: 22px; border-top: 2px solid var(--ink); }
+.project .what { color: var(--muted); }
+.note { justify-self: start; font-size: .88rem; padding: 6px 10px; border: 1px solid var(--trust); background: var(--trust-soft); border-radius: 8px; }
+.pages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.pages a { display: grid; gap: 4px; height: 100%; padding: 14px 16px; border-radius: 8px; background: var(--surface);
+  border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.pages a:hover, .pages a:focus-visible { border-color: var(--accent); }
+.pages a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pages span { font: 500 .7rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--shield); }
+.pages b { font-family: var(--f-display); font-size: 1.15rem; }
+.pages small { color: var(--muted); font-size: .9rem; }
+footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Projects</div>
+    <h1>Brian Chen</h1>
+    <p class="lede">Design write-ups of things I build. Each project has its own pages; the code itself is not published here.</p>
+  </header>
+
+  <section class="project" aria-labelledby="agentshield">
+    <h2 id="agentshield">AgentShield</h2>
+    <p class="what">A security layer for AI agents that run in the cloud: it checks every model call, every tool call, the way out to the internet and the way into the knowledge base, and keeps a record nobody can quietly change.</p>
+    <p class="note">The source code is confidential and not intended to be shared.</p>
+    <ul class="pages">
+      <li><a href="agentshield/architecture.html"><span>Reference design</span><b>AgentShield for chatbot agents in the cloud</b><small>Seven defense layers on a customer-support agent, each shown up close, with OWASP mapping and other clouds.</small></a></li>
+      <li><a href="agentshield/overview.html"><span>Overview</span><b>AgentShield at a glance</b><small>One page: what the agent exposes, how the layers protect it, and how they map to OWASP and NIST.</small></a></li>
+    </ul>
+  </section>
+
+  <footer>© Brian Chen. Pages on this site describe designs; source code is not included.</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+/* What the artifact host adds to every page; the page's own styles below override it. */
+:root { color-scheme: light; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+/* Link back to the site's home page. System colors follow the page's light or dark scheme. */
+.site-nav { padding: 8px max(16px, env(safe-area-inset-left, 0px)); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: Canvas; color: CanvasText; border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent); }
+.site-nav a { color: inherit; text-decoration: none; opacity: .75; }
+.site-nav a:hover, .site-nav a:focus-visible { opacity: 1; text-decoration: underline; }
+</style>
+<title>AgentShield for Cloud Chatbot Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a reading page in four parts. Parts 1 and 2 each hold a wide cloud diagram with a walkthrough rail
+   and inspector; parts 3 and 4 are reference. Accent = request flow; shield = AgentShield; warn = untrusted; trust = boundaries. */
+:root {
+  --paper: #f4f6f9; --surface: #ffffff; --ink: #142033; --muted: #586579; --faint: #8a95a6;
+  --line: #d6dce5; --zone: #eef1f6; --zone2: #e4e9f1; --code: #edf1f6;
+  --accent: #1d5bbf; --accent-soft: #e2ebfa;
+  --shield: #1c7444; --shield-soft: #e3f3e9;
+  --warn: #b42318; --warn-soft: #fbe9e7;
+  --trust: #a85a07; --trust-soft: #fcf0df;
+  --aws: #8a5a00;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e141e; --surface: #151d2a; --ink: #e4e9f1; --muted: #9aa6b9; --faint: #6b778a;
+    --line: #2a3547; --zone: #111925; --zone2: #172131; --code: #111925;
+    --accent: #74a6f2; --accent-soft: #1a2a44; --shield: #63c891; --shield-soft: #142e1f;
+    --warn: #f2857b; --warn-soft: #3a1d1c; --trust: #e8a957; --trust-soft: #392914; --aws: #e0b25c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e141e; --surface: #151d2a; --ink: #e4e9f1; --muted: #9aa6b9; --faint: #6b778a;
+  --line: #2a3547; --zone: #111925; --zone2: #172131; --code: #111925;
+  --accent: #74a6f2; --accent-soft: #1a2a44; --shield: #63c891; --shield-soft: #142e1f;
+  --warn: #f2857b; --warn-soft: #3a1d1c; --trust: #e8a957; --trust-soft: #392914; --aws: #e0b25c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font: 15px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+.wrap { max-width: 1380px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 4.4vw, 2.9rem); font-weight: 700; }
+h2 { font-size: clamp(1.45rem, 2.6vw, 1.8rem); font-weight: 600; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+code { font-family: var(--f-mono); font-size: .86em; background: var(--code); padding: .05em .3em; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font: 600 .72rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.prose { max-width: 84ch; }
+
+header.top { padding-block: 40px 22px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+header.top .lede { max-width: 86ch; font-size: 1.05rem; }
+.parts { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .parts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .parts { grid-template-columns: minmax(0, 1fr); } }
+.parts a { display: grid; gap: 2px; text-decoration: none; color: var(--ink); border-top: 2px solid var(--ink); padding-top: 8px; }
+.parts a span { font: 600 .72rem/1 var(--f-mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.parts a b { font-family: var(--f-display); font-size: 1.05rem; }
+.parts a small { color: var(--muted); font-size: .84rem; }
+.parts a:hover b { color: var(--accent); }
+
+section.part { padding-top: 48px; display: grid; gap: 14px; }
+section.part > header { display: grid; gap: 8px; }
+.partno { font: 700 .78rem/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.assume { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: .82rem; }
+.assume span { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; background: var(--surface); color: var(--muted); }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 .84rem/1 var(--f-body); color: var(--muted); background: none; border: 0; padding: 9px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.toggle { display: inline-flex; align-items: center; gap: 7px; font-size: .86rem; color: var(--ink); cursor: pointer; }
+.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+.toggle .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); gap: 18px; align-items: start; }
+@media (max-width: 1080px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 920px; height: auto; }
+svg text { font-family: var(--f-body); fill: var(--ink); }
+svg .zlabel { font: 600 10.5px var(--f-mono); letter-spacing: .08em; fill: var(--muted); }
+svg .z-aws { fill: none; stroke: var(--aws); stroke-width: 1.6; }
+svg .z-vpc { fill: var(--zone); stroke: var(--faint); stroke-width: 1.2; }
+svg .z-sub { fill: var(--zone2); stroke: none; }
+svg .z-int { fill: var(--zone2); stroke: var(--faint); stroke-width: 1; stroke-dasharray: 4 4; }
+svg .z-ops { fill: var(--shield-soft); stroke: var(--shield); stroke-width: 1; stroke-dasharray: 4 4; }
+svg .node rect.box { fill: var(--surface); stroke: var(--line); stroke-width: 1.4; transition: fill .2s, stroke .2s; }
+svg .node.ext rect.box { stroke-dasharray: 5 4; stroke: var(--faint); }
+svg .node.def rect.box { fill: var(--shield-soft); stroke: var(--shield); stroke-width: 2; }
+svg .node .t { font: 600 13px var(--f-display); }
+svg .node .s { font: 10.5px var(--f-mono); fill: var(--muted); }
+svg .node .idchip rect { fill: var(--shield); }
+svg .node .idchip text { font: 700 10px var(--f-mono); fill: var(--surface); }
+svg .node { cursor: pointer; transition: opacity .2s; }
+svg .node:hover rect.box { stroke: var(--accent); }
+svg .node.sel rect.box { stroke: var(--accent); stroke-width: 2.6; }
+svg .node.hl rect.box { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.2; }
+svg .node.def.hl rect.box { fill: var(--shield-soft); stroke: var(--shield); stroke-width: 3; }
+svg.walking .node:not(.hl) { opacity: .38; }
+svg .node.off { opacity: .28 !important; }
+svg .gone { display: none; }
+svg .edge { fill: none; stroke: var(--faint); stroke-width: 1.5; transition: stroke .2s, opacity .2s; }
+svg .edge.hl { stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 7 5; animation: flow .9s linear infinite; }
+svg.walking .edge:not(.hl) { opacity: .28; }
+svg .elabel { font: 10px var(--f-mono); fill: var(--muted); }
+@keyframes flow { to { stroke-dashoffset: -24; } }
+svg .ah { fill: var(--faint); }
+svg .badge { display: none; }
+svg.show-tb .badge.tb, svg.show-un .badge.un { display: inline; }
+svg .badge.tb circle { fill: var(--trust); }
+svg .badge.un rect { fill: var(--warn); }
+svg .badge text { font: 700 10.5px var(--f-mono); fill: var(--surface); }
+
+.side { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 10px); }
+@media (max-width: 1080px) { .side { position: static; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: s; }
+ol.steps li { counter-increment: s; }
+ol.steps button {
+  width: 100%; text-align: left; font: inherit; font-size: .88rem; color: var(--ink); background: none;
+  border: 1px solid transparent; border-radius: 7px; padding: 6px 8px; cursor: pointer;
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: baseline;
+}
+ol.steps button::before { content: counter(s); font: 600 .78rem/1 var(--f-mono); color: var(--muted); }
+ol.steps button:hover { border-color: var(--line); }
+ol.steps button[aria-current="step"] { border-color: var(--accent); background: var(--accent-soft); }
+.stepnav { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: 600 .84rem/1 var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn:disabled { opacity: .45; cursor: default; }
+.caption { font-size: .92rem; display: grid; gap: 8px; }
+.caption b { font-family: var(--f-display); font-size: 1.05rem; }
+.caption pre { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: .76rem/1.5 var(--f-mono); white-space: pre-wrap; word-break: break-word; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checks li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; font-size: .86rem; align-items: baseline; }
+.checks li span.id { font: 700 .72rem/1.5 var(--f-mono); color: var(--surface); background: var(--shield); border-radius: 4px; text-align: center; }
+
+.inspector dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: .9rem; }
+.inspector dt { color: var(--muted); font: 600 .72rem/1.6 var(--f-mono); text-transform: uppercase; letter-spacing: .05em; }
+.inspector dd { margin: 0; }
+.pill { display: inline-block; font: 600 .7rem/1 var(--f-mono); text-transform: uppercase; letter-spacing: .05em; padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.tp-un { color: var(--warn); background: var(--warn-soft); } .tp-semi { color: var(--trust); background: var(--trust-soft); } .tp-in { color: var(--accent); background: var(--accent-soft); }
+.st-built { color: var(--shield); background: var(--shield-soft); } .st-partial { color: var(--trust); background: var(--trust-soft); } .st-planned { color: var(--muted); background: var(--zone2); }
+
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 960px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.table { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font: 600 .7rem/1.3 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--zone); }
+td.id { font: 700 .78rem var(--f-mono); white-space: nowrap; }
+td.id.tb { color: var(--trust); } td.id.un { color: var(--warn); } td.id.d { color: var(--shield); }
+td.cov { font: .78rem var(--f-mono); color: var(--shield); min-width: 9em; }
+h3.sub { margin-top: 10px; }
+ol.build { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: b; }
+ol.build > li { counter-increment: b; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+ol.build > li::before { content: counter(b); grid-row: span 3; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 .9rem var(--f-mono); color: var(--shield); border: 1.5px solid var(--shield); background: var(--shield-soft); }
+ol.build .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+ol.build .head b { font-family: var(--f-display); font-size: 1.08rem; margin-right: 4px; }
+ol.build p { color: var(--muted); font-size: .92rem; max-width: 90ch; }
+ol.build .done { font-size: .86rem; color: var(--ink); }
+ol.build .done::before { content: "Done when: "; font-weight: 600; }
+.callout { border: 1px solid var(--trust); background: var(--trust-soft); border-radius: 10px; padding: 12px 14px; font-size: .9rem; display: grid; gap: 4px; max-width: 100ch; }
+.byline { justify-self: start; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px;
+  border: 1px solid var(--trust); background: var(--trust-soft); border-radius: 8px; font-size: .9rem; }
+.byline b { font-family: var(--f-display); font-size: 1rem; }
+.byline span { color: var(--ink); }
+.highlights { list-style: none; margin: 4px 0 6px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.highlights li { min-width: 0; background: var(--shield-soft); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.highlights span { font: 600 .7rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--shield); }
+.highlights b { font-family: var(--f-display); font-size: 1.08rem; line-height: 1.25; }
+.highlights p { margin: 0; color: var(--muted); font-size: .9rem; }
+footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: .84rem; display: grid; gap: 4px; }
+
+/* D1 up close */
+.journey { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 600 .78rem/1 var(--f-mono); }
+.journey span { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 8px; white-space: nowrap; }
+.journey span.new { border-color: var(--accent); color: var(--accent); }
+.journey i { color: var(--faint); font-style: normal; }
+.comp { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.comp details { border-top: 1px solid var(--line); }
+.comp details:first-child { border-top: 0; }
+.comp summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 34px minmax(0, 220px) minmax(0, 1fr) max-content; gap: 6px 14px; align-items: center; padding: 11px 14px; }
+@media (max-width: 760px) { .comp summary { grid-template-columns: 30px minmax(0, 1fr) max-content; } .comp summary .one { grid-column: 2 / -1; } }
+.comp summary::-webkit-details-marker { display: none; }
+.comp summary:hover { background: var(--zone); }
+.comp summary .n { font: 700 .82rem var(--f-mono); color: var(--muted); }
+.comp summary b { font-family: var(--f-display); font-size: 1.02rem; }
+.comp summary .one { color: var(--muted); font-size: .9rem; }
+.comp details[open] summary { background: var(--zone); }
+.comp .body { padding: 6px 16px 16px 62px; display: grid; gap: 6px; }
+@media (max-width: 760px) { .comp .body { padding-left: 16px; } }
+.comp .body dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: .9rem; max-width: 110ch; }
+.comp .body dt { font: 600 .7rem/1.7 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.comp .body dd { margin: 0; }
+.st-new { color: var(--accent); background: var(--accent-soft); }
+.decided { border: 1px solid var(--shield); background: var(--shield-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; font-size: .92rem; max-width: 100ch; }
+.decided ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+pre.cfg { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; font: .78rem/1.55 var(--f-mono); color: var(--ink); overflow-x: auto; }
+pre.cfg .c { color: var(--muted); }
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.concept { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.concept .k { display: flex; align-items: center; gap: 8px; }
+.concept .k b { font-family: var(--f-display); font-size: 1.02rem; }
+.concept p { color: var(--muted); font-size: .88rem; }
+.flowline { font: .8rem/1.7 var(--f-mono); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; white-space: pre; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<nav class="site-nav"><a href="../">&larr; Brian Chen &middot; Projects</a></nav>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">AgentShield · reference design</div>
+    <h1>AgentShield for chatbot agents in the cloud</h1>
+    <p class="byline"><b>By Brian Chen</b><span>The source code is confidential and not intended to be shared.</span></p>
+    <p class="lede">A chatbot agent in the cloud is more than a model call. It reads web pages, searches a knowledge base, calls company APIs, and runs as containers next to customer data. This page shows such a system, where AgentShield's defense layers go, and how each layer works inside. AWS is the example; the same design maps to Google Cloud and Azure.</p>
+    <ul class="highlights" aria-label="Highlights">
+      <li><span>Every path</span><b>One checkpoint per way in or out</b><p>Model calls, tool calls, the way out to the internet and the way into the knowledge base each pass through one gateway that checks them.</p></li>
+      <li><span>D2 · Execution</span><b>Approved where the tool runs</b><p>Risky tools wait for a person, who sees the exact arguments. Each approval works once, for that call only.</p></li>
+      <li><span>D3 · Egress</span><b>The address, not the URL</b><p>The proxy resolves names itself and connects only to the address it checked, so cloud credentials, internal hosts and DNS tricks stay out of reach.</p></li>
+      <li><span>D4 · Knowledge</span><b>Sealed, per-user knowledge</b><p>Documents are checked before indexing and every chunk is sealed. Search returns only chunks the signed-in user may read.</p></li>
+      <li><span>D6 · Containment</span><b>One kill switch, everywhere</b><p>Kill, quarantine and approvals live in one shared store, so every gateway server and the egress proxy agree at once.</p></li>
+      <li><span>D7 · Evidence</span><b>A record nobody can quietly change</b><p>Hash-chained audit records go to a write-once archive, and every admin action names the person who took it.</p></li>
+    </ul>
+    <ul class="parts">
+      <li><a href="#part1"><span>Part 1</span><b>The system we protect</b><small>Components, data flows, trust boundaries</small></a></li>
+      <li><a href="#part2"><span>Part 2</span><b>Where AgentShield goes</b><small>Seven defense layers on the same system</small></a></li>
+      <li><a href="#part3"><span>Part 3</span><b>D1 up close</b><small>Every component of the LLM gateway</small></a></li>
+      <li><a href="#part4"><span>Part 4</span><b>D6 up close</b><small>Shared security state across gateway tasks</small></a></li>
+      <li><a href="#part5"><span>Part 5</span><b>D2 up close</b><small>The MCP gateway at the point of execution</small></a></li>
+      <li><a href="#part6"><span>Part 6</span><b>D3 up close</b><small>The egress proxy: who may connect where</small></a></li>
+      <li><a href="#part7"><span>Part 7</span><b>D7 up close</b><small>Alerts, the audit archive and the admin console</small></a></li>
+      <li><a href="#part8"><span>Part 8</span><b>D4 up close</b><small>Checked documents, sealed chunks, per-user retrieval</small></a></li>
+      <li><a href="#part9"><span>Part 9</span><b>Framework</b><small>How the code is organized</small></a></li>
+      <li><a href="#part10"><span>Part 10</span><b>Any cloud</b><small>The same design on Google Cloud and Azure</small></a></li>
+    </ul>
+  </header>
+
+  <!-- ===================================================== PART 1 -->
+  <section class="part" id="part1">
+    <header>
+      <div class="partno">Part 1 · Identify</div>
+      <h2>The system we protect</h2>
+      <p class="prose muted">A customer-support chatbot built as an agent. Claude decides which tools to call; the app executes them through three MCP servers: web search, RAG over a LanceDB knowledge base, and internal company APIs. Everything runs as containers on ECS Fargate. Nothing here is defended yet beyond the usual cloud controls.</p>
+      <div class="assume" aria-label="Assumptions">
+        <span>MCP servers run as separate ECS services (Streamable HTTP)</span>
+        <span>LanceDB is embedded in the RAG MCP; tables live on S3</span>
+        <span>Query and document embeddings come from Bedrock</span>
+        <span>Chat history in DynamoDB; sign-in through Cognito</span>
+      </div>
+    </header>
+    <div class="dg" data-view="before" data-id="p1"></div>
+
+    <h3 class="sub">What an attacker wants</h3>
+    <div class="table"><table>
+      <thead><tr><th>Asset</th><th>Where it lives</th><th>Why an attacker wants it</th></tr></thead>
+      <tbody>
+        <tr><td>Customer records and orders</td><td>Internal APIs, reached by the internal API MCP</td><td>Exfiltration through the chat or through a tool that writes outward</td></tr>
+        <tr><td>Knowledge base documents</td><td>S3 · LanceDB tables</td><td>Read internal docs; poison them so every future answer carries the attacker's text</td></tr>
+        <tr><td>Credentials</td><td>Secrets Manager, ECS task roles</td><td>Anthropic or Bedrock spend, search API quota, service accounts for internal APIs</td></tr>
+        <tr><td>Conversation history</td><td>DynamoDB</td><td>Other users' questions and answers; a place to plant instructions that replay on later turns</td></tr>
+        <tr><td>Agent authority</td><td>The agent loop and its tool list</td><td>Make the agent act for the attacker: call tools, change records, contact outside hosts</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cols">
+      <div class="table"><table>
+        <thead><tr><th></th><th>Trust boundary</th><th>What crosses it</th></tr></thead>
+        <tbody id="tb-table-1"></tbody>
+      </table></div>
+      <div class="table"><table>
+        <thead><tr><th></th><th>Untrusted text into the model</th><th>How it arrives</th></tr></thead>
+        <tbody id="un-table-1"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ===================================================== PART 2 -->
+  <section class="part" id="part2">
+    <header>
+      <div class="partno">Part 2 · Protect · Detect · Respond</div>
+      <h2>Where AgentShield goes</h2>
+      <p class="prose muted">The same system with seven defense layers. Each one sits on a choke point: the model call, the tool calls, the way out to the internet, the way into the knowledge base, identity, shared state, and operations. Step through the same question to see which layer checks what at each hop.</p>
+    </header>
+    <div class="dg" data-view="after" data-id="p2"></div>
+
+    <h3 class="sub">The seven layers</h3>
+    <p class="prose muted">"Reference layers" are the ten protection layers in the reference workflow (L1 input validation through L10 observability).</p>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Layer</th><th>Where it sits</th><th>What it enforces</th><th>Reference layers</th><th>Covers</th></tr></thead>
+      <tbody id="d-table"></tbody>
+    </table></div>
+
+    <h3 class="sub">Every boundary and entry point, covered</h3>
+    <div class="cols">
+      <div class="table"><table>
+        <thead><tr><th></th><th>Trust boundary</th><th>Covered by</th></tr></thead>
+        <tbody id="tb-table-2"></tbody>
+      </table></div>
+      <div class="table"><table>
+        <thead><tr><th></th><th>Untrusted text into the model</th><th>Covered by</th></tr></thead>
+        <tbody id="un-table-2"></tbody>
+      </table></div>
+    </div>
+
+    <h3 class="sub">OWASP Top 10 for Agentic Applications</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Threat</th><th>How it shows up in this chatbot</th><th>Layers</th></tr></thead>
+      <tbody id="asi-table"></tbody>
+    </table></div>
+  </section>
+
+
+  <!-- ===================================================== PART 3 · D1 -->
+  <section class="part" id="part3">
+    <header>
+      <div class="partno">Part 3 · D1 up close</div>
+      <h2>The LLM gateway, component by component</h2>
+      <p class="prose muted">D1 handles one thing: every call between the agent app and the model. It sees the full context the app sends (user messages, history, tool definitions, tool results) and everything the model sends back (text and the tools it wants to call). It does not see a tool actually running; that is D2. The four lines in the diagram summarize twelve components. Most exist today; the new work is what it takes to sit in front of Claude.</p>
+    </header>
+
+    <h3 class="sub">One request, in order</h3>
+    <div class="journey" aria-label="Order of D1 components">
+      <span class="new">① Inbound adapter</span><i>→</i><span>③ Admission</span><i>→</i><span class="new">④ Routing + provider</span><i>→</i>
+      <span>⑤ Input screening</span><i>→</i><span>⑥ Context assembly</span><i>→</i><span class="new">⑧ Server-tool policy</span><i>→</i>
+      <span class="new">⑦ Model call</span><i>→</i><span>⑨ Output checks</span><i>→</i><span>⑩ Tool-call governance</span><i>→</i>
+      <span>⑪ Containment</span><i>→</i><span>⑫ Observability</span><i>→</i><span class="new">② Streaming reply</span>
+    </div>
+    <p class="muted" style="font-size:.86rem">Blue outline: the parts specific to Claude. Open any row for what it does, why it exists and how it works.</p>
+    <div class="comp" id="d1-comps"></div>
+
+    <h3 class="sub">One conversation format inside the gateway</h3>
+    <p class="prose muted">Translating Claude requests into OpenAI's format and back would lose thinking blocks, cache markers and citations, and would change bytes the model already saw. Instead both protocols map into one internal format (the IR) that holds only what security checks need. Everything else is carried untouched: blocks the gateway does not change are written back byte for byte.</p>
+    <div class="table"><table>
+      <thead><tr><th>Concept</th><th>OpenAI Chat Completions</th><th>Internal format (IR)</th><th>Anthropic Messages</th></tr></thead>
+      <tbody id="ir-table"></tbody>
+    </table></div>
+
+    <h3 class="sub">Claude's thinking and the rule of never editing history</h3>
+    <p class="prose muted">Claude's newest models sign every thinking block with a record of everything before it: the top-level system prompt, the set of tools, every earlier message, and the model. When the history comes back, the API checks that record. Appending is fine. Rewriting, deleting or inserting anything the model has already seen invalidates the thinking after that point and, by default, fails the request with a 400. In one line: what the model has seen must come back identical.</p>
+    <div class="table"><table>
+      <thead><tr><th>What D1 changes</th><th>Conflict?</th><th>How D1 stays safe</th></tr></thead>
+      <tbody id="think-table"></tbody>
+    </table></div>
+    <p class="prose muted">So in normal operation the gateway's checks and Claude's thinking do not collide. The one real conflict is a message that went to the model unchanged earlier and is flagged only now, for example after a rule update mid-conversation.</p>
+    <div class="table"><table>
+      <thead><tr><th>Option</th><th>What happens</th><th>Security</th><th>Reasoning kept</th><th>Needs state</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr><td><b>(c) Replace and drop thinking</b></td><td>Replace the content as usual and send <code>prefix_mismatch_behavior: "drop_block"</code>; the API drops thinking after the edit point</td><td>High: the injected text is gone</td><td>Lost after the edit; Claude re-plans</td><td>No</td><td><span class="pill st-built">Default in D1</span></td></tr>
+        <tr><td><b>(b) Annotate</b></td><td>Leave history alone; append a platform system message naming the untrusted message. The gateway must re-insert it in the same place every later turn</td><td>Medium: the text stays in context</td><td>All of it</td><td>Yes, per conversation</td><td><span class="pill st-planned">After D6</span></td></tr>
+        <tr><td><b>(a) Block</b></td><td>Refuse the request and ask the client to start a new conversation</td><td>Highest</td><td>Conversation ends</td><td>No</td><td><span class="pill st-partial">Fallback</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="decided">
+      <b>Decided</b>
+      <ol>
+        <li>Sanitize deterministically: same input and policy version, same output. That keeps history identical across turns.</li>
+        <li>On a newly flagged earlier message, use (c). Every Claude request carries <code>drop_block</code> as a safety net, and any <code>prefix_binding_mismatch</code> in <code>input_transformations</code> raises an alert. CI uses <code>"error"</code> instead so edits fail tests.</li>
+        <li>Add (b) after D6 provides per-conversation state.</li>
+        <li>Fall back to (a) where <code>drop_block</code> is unavailable or the finding is the highest risk.</li>
+      </ol>
+    </div>
+
+    <h3 class="sub">Credentials</h3>
+    <p class="prose muted">The app's Claude SDK changes two values: <code>base_url</code> points at the gateway and the key becomes a gateway key. The Anthropic key lives only in a secret the gateway task can read; Bedrock uses the gateway task's IAM role, limited to invoking the chosen models. The app's role cannot read either.</p>
+
+  </section>
+
+  <!-- ===================================================== PART 4 -->
+  <section class="part" id="part4">
+    <header>
+      <div class="partno">Part 4 · D6 up close</div>
+      <h2>Shared security state, so every gateway task agrees</h2>
+      <p class="prose muted">D1, D2 and D7 make containment decisions: stop the service, quarantine a caller, cap a quota, trip a breaker, approve a tool call once. Those decisions only hold if every gateway task sees them and they survive a restart. D6 moves them out of process memory into one store: SQLite on a laptop, DynamoDB on AWS. It adds no box to the request path; it is the memory the other layers share.</p>
+    </header>
+
+    <h3 class="sub">What breaks without it</h3>
+    <div class="table"><table>
+      <thead><tr><th>Situation</th><th>With state in one process</th><th>With D6</th></tr></thead>
+      <tbody>
+        <tr><td>A caller is quarantined on task A; the next request lands on task B</td><td>B lets it through</td><td>Every task reads the same quarantine record</td></tr>
+        <tr><td>An operator presses the kill switch on task A</td><td>B keeps serving</td><td>Every task checks the switch at admission and again before release</td></tr>
+        <tr><td>An approval is created on A; the operator's decision lands on B</td><td>B has never heard of it</td><td>One approval record, reachable from any task</td></tr>
+        <tr><td>The same approved call arrives on A and B at once</td><td>Both release it</td><td>A conditional write marks it used; only one succeeds</td></tr>
+        <tr><td>60 requests per minute, two tasks</td><td>120 in practice</td><td>One shared counter</td></tr>
+        <tr><td>A deploy replaces every task</td><td>Quarantines, breaker counts and approvals reset</td><td>Nothing resets</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">What goes in, and what stays local</h3>
+    <div class="table"><table>
+      <thead><tr><th>State</th><th>Shared</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Kill switch, with a version number</td><td><span class="pill st-built">Yes</span></td><td>A security promise</td></tr>
+        <tr><td>Quarantine per principal, with a version number</td><td><span class="pill st-built">Yes</span></td><td>A security promise</td></tr>
+        <tr><td>Approvals: create, decide, revoke, use once</td><td><span class="pill st-built">Yes</span></td><td>A security promise</td></tr>
+        <tr><td>Rate and breaker windows</td><td><span class="pill st-built">Yes</span></td><td>Limits must hold across tasks</td></tr>
+        <tr><td>Replay fingerprints for history</td><td><span class="pill st-built">Yes</span></td><td>Once the breaker is shared, a replay on another task must not count again</td></tr>
+        <tr><td>Dashboard counters, recent alerts, concurrency cap</td><td><span class="pill st-planned">No</span></td><td>Diagnostic, or protects one task's own resources</td></tr>
+        <tr><td>Credentials</td><td><span class="pill st-planned">Never</span></td><td>They stay in Secrets Manager; state rows hold principal hashes only</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">Two ideas that keep it correct</h3>
+    <div class="decided">
+      <b>Design</b>
+      <ol>
+        <li><b>Actions, not reads and writes.</b> The store exposes operations such as <code>consume_approval</code> or <code>hit_rate</code>, each atomic on its own. Nothing reads a record, changes it in Python and writes it back, so two tasks cannot overwrite each other.</li>
+        <li><b>Versions instead of edits.</b> Every approval records the kill-switch version and its principal's version when it was created, and is usable only while both still match. Pressing the kill switch, or quarantining a caller, voids every earlier approval at once, even after a resume, without touching each record. Requests do the same: a snapshot at admission and another before release; if a version moved, the answer is withheld.</li>
+      </ol>
+    </div>
+
+    <h3 class="sub">Three backends, one contract</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>memory</th><th>sqlite</th><th>dynamodb</th></tr></thead>
+      <tbody>
+        <tr><td>For</td><td>Tests, one process</td><td>Local Docker, one replica</td><td>ECS with several tasks</td></tr>
+        <tr><td>Survives restart</td><td>No</td><td>Yes, on the <code>/data</code> volume</td><td>Yes</td></tr>
+        <tr><td>Shared across tasks</td><td>No</td><td>No: never share one file between ECS tasks</td><td>Yes</td></tr>
+        <tr><td>Atomic by</td><td>One event loop</td><td>Transactions</td><td>Conditional writes</td></tr>
+        <tr><td>Rate and breaker windows</td><td>Exact sliding</td><td>Exact sliding</td><td>Fixed time buckets: up to 2× a quota across a bucket edge</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose muted">One DynamoDB table holds everything, keyed by namespace and principal: the control item, each principal's containment item, rate and breaker buckets, replay fingerprints and approvals. TTL only cleans up; expiry is always checked from timestamps, because DynamoDB may delete an expired item days later. The same contract tests run against all three backends.</p>
+
+    <h3 class="sub">When the store is down</h3>
+    <p class="prose muted">Refuse with 503, in enforce and monitor mode alike. Falling back to an empty in-memory state would quietly lift every quarantine and the kill switch. <code>/readyz</code> reports the store's health, so the load balancer stops sending traffic to a task that cannot reach it.</p>
+
+    <h3 class="sub">What D6 does not do</h3>
+    <ul class="prose muted">
+      <li>Take back output already sent. Between the last check and release there is still a very short gap.</li>
+      <li>Stop a stream on another task instantly. A kill on task B reaches task A at A's next check, before release.</li>
+      <li>Guarantee a tool runs once. Single use means the call is released once; the executor (D2) still needs its own idempotency.</li>
+      <li>Merge audit chains. Each task writes its own chain; D7 archives every chain, write-once, in one bucket.</li>
+    </ul>
+
+  </section>
+
+  <!-- ===================================================== PART 5 -->
+  <section class="part" id="part5">
+    <header>
+      <div class="partno">Part 5 · D2 up close</div>
+      <h2>The MCP gateway, where tools actually run</h2>
+      <p class="prose muted">D1 sees the tool calls the model proposes. D2 sees the calls the app actually makes, the tool definitions each MCP server declares, and the results before the app reads them. The app no longer talks to the three MCP servers; it calls <code>POST /mcp/&lt;server&gt;</code> on the gateway, and network rules (D5) make the gateway the only way through.</p>
+    </header>
+
+    <h3 class="sub">Why the protocol version matters</h3>
+    <p class="prose muted">MCP 2026-07-28 is stateless: no handshake, no session ID, every request a separate POST that carries its own protocol version. The method, the tool name and selected arguments are mirrored into headers, and anything that reads those headers must reject a request whose headers and body disagree. That lets the gateway judge each call on its own. For servers that still need the older <code>initialize</code> handshake, the gateway performs it upstream and stays stateless toward the app.</p>
+
+    <h3 class="sub">One tool call, in order</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Step</th><th>What happens</th><th>If it fails</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">1</td><td>Protocol</td><td>One JSON-RPC request; version 2026-07-28; <code>MCP-Protocol-Version</code>, <code>Mcp-Method</code>, <code>Mcp-Name</code> and <code>Mcp-Param-*</code> match the body; Origin, if present, is allowed</td><td>400 HeaderMismatch, 403, or 405 for GET and DELETE</td></tr>
+        <tr><td class="id d">2</td><td>Admission</td><td>Gateway key → principal → profile; kill switch, quarantine and quota from D6, shared with D1</td><td>503, 403, 429</td></tr>
+        <tr><td class="id d">3</td><td>Methods</td><td>Only <code>server/discover</code>, <code>tools/list</code>, <code>tools/call</code></td><td>404 Method not found</td></tr>
+        <tr><td class="id d">4</td><td>Tool allowlist</td><td>Only the tools this profile lists for this server</td><td>Unknown tool, as if it did not exist</td></tr>
+        <tr><td class="id d">5</td><td>Pinned definition</td><td>The server's current definition must hash to the pin; its description is scanned for injection</td><td>Hidden and refused; one alert; never counted against the caller</td></tr>
+        <tr><td class="id d">6</td><td>Arguments</td><td>The pinned input schema, the profile's rule, a check for secrets and canaries, then any defense module that handles <code>tool_execution</code> events</td><td>A tool error the model can read and act on, or an approval</td></tr>
+        <tr><td class="id d">7</td><td>Approval</td><td>For <code>require_approval</code> tools: an approval in D6, bound to the forwarded user identity, consumed before the call runs, once</td><td>A tool error carrying the approval ID</td></tr>
+        <tr><td class="id d">8</td><td>Forward</td><td>Kill switch and quarantine checked once more; headers rebuilt; the upstream credential and allowed identity headers added; the caller's key never forwarded</td><td>503 if revoked; 502 on timeout or oversize</td></tr>
+        <tr><td class="id d">9</td><td>Result</td><td>Rebuilt from the fields MCP defines; every remaining string scanned, keys included; injection removes the result, secrets are redacted, images and unknown blocks dropped, output schema enforced</td><td>Replaced or redacted, then returned</td></tr>
+        <tr><td class="id d">10</td><td>Release</td><td>D6 checked again; one audit record; new findings feed the shared breaker</td><td>503 if revoked meanwhile</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">Tool poisoning and rug pulls</h3>
+    <p class="prose muted">A tool's description goes into the model's context, so a hostile or compromised server can hide instructions there, or ship a harmless version for review and change it later. Each allowed tool can carry a pin: a hash of its whole definition. <code>agentshield mcp pins &lt;server&gt;</code> prints the current pins for an operator to review and paste into the profile. A definition that no longer matches is hidden from <code>tools/list</code> and refused at <code>tools/call</code>. That is the server's fault, not the caller's, so it alerts once and never feeds the caller's circuit breaker.</p>
+
+    <h3 class="sub">What D2 does not do</h3>
+    <ul class="prose muted">
+      <li>See inside an MCP server: what it reaches on its own is for D3 (egress) and D5 (least privilege).</li>
+      <li>Help if the app can bypass it: only the gateway may reach the MCP servers, enforced by the network.</li>
+      <li>Check images or audio: dropped by default.</li>
+      <li>Relay resources, prompts, subscriptions or input requests: each would need its own checks, so they are refused.</li>
+      <li>Approve twice: tools that run through D2 are approved at D2, where the real arguments are known, and D1 only checks their shape.</li>
+    </ul>
+
+  </section>
+
+  <!-- ===================================================== PART 6 -->
+  <section class="part" id="part6">
+    <header>
+      <div class="partno">Part 6 · D3 up close</div>
+      <h2>The egress proxy: who may connect where</h2>
+      <p class="prose muted">D1 and D2 judge content. A steered model can still ask a tool to fetch <code>http://169.254.169.254/</code>, an internal admin page, or an attacker's URL with customer data in the query string. Those have to be stopped where the network connection is made, by looking at the address actually reached. Every service that needs the internet sets <code>HTTPS_PROXY</code> to D3, and security groups make it the only way out.</p>
+    </header>
+
+    <h3 class="sub">One connection, in order</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Step</th><th>What happens</th><th>If it fails</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">1</td><td>Who is connecting</td><td>Each service has its own proxy key</td><td>407</td></tr>
+        <tr><td class="id d">2</td><td>Shared state</td><td>Kill switch, quarantine of <code>egress:&lt;client&gt;</code>, connections per minute, all from D6</td><td>503, 403, 429</td></tr>
+        <tr><td class="id d">3</td><td>Destination</td><td>The host name must be on this client's allowlist (exact, <code>*.domain</code>, or <code>*</code> for any public host) and the port on its list; IP literals and spellings like <code>2130706433</code> are refused</td><td>403</td></tr>
+        <tr><td class="id d">4</td><td>Resolve and check</td><td>The proxy resolves the name itself; every answer must be public, or inside a range the client lists; cloud metadata addresses are refused always, whatever the list says</td><td>403, and an alert</td></tr>
+        <tr><td class="id d">5</td><td>Connect</td><td>To the address just checked, never a second lookup, so DNS rebinding fails; the shared state is read again before any byte moves</td><td>502, 503</td></tr>
+        <tr><td class="id d">6</td><td>Relay</td><td>HTTPS as a tunnel (no decryption). Plain HTTP: exactly one request per connection, its length known up front, credentials stripped; the whole request, headers included, must fit the upload cap before anything is sent, and nothing after it is forwarded. Download cap, idle and total time limits</td><td>413, or cut with the reason recorded</td></tr>
+        <tr><td class="id d">7</td><td>Watch</td><td>An open connection ends when a kill switch or quarantine lands: at once if made in the proxy's own process, within seconds if made elsewhere</td><td>Cut, with the reason recorded</td></tr>
+        <tr><td class="id d">8</td><td>Record</td><td>One audit line: client, host, port, address, decision, reason, bytes; never the path</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">Why a small upload cap matters</h3>
+    <p class="prose muted">A page fetch sends little and receives a lot. Capping what each connection may send (64 KiB by default) limits how much a steered tool can carry out in one go, and each attempt leaves a record. Services that legitimately send large requests, such as the gateway calling the Claude API, get a larger cap.</p>
+
+    <h3 class="sub">What D3 does not do</h3>
+    <ul class="prose muted">
+      <li>See HTTPS paths or content: it does not decrypt. D2 checks what tools return.</li>
+      <li>Stop data hidden in DNS lookups: tasks resolve names without the proxy. DNS Firewall applies per VPC, so the proxy sits in its own egress VPC and the workload VPC resolves only AWS and internal names (D5).</li>
+      <li>Match a tunnel's TLS server name to the name it asked for: it guarantees the address reached, not the application behind it.</li>
+      <li>Stop misuse of an allowed host: data placed in search queries to an allowed API. Upload caps reduce the volume; D1 and D2 check the arguments.</li>
+      <li>Replace network enforcement: without security groups or Network Firewall, a service that ignores the proxy goes straight out.</li>
+    </ul>
+
+  </section>
+
+  <!-- ===================================================== PART 7 -->
+  <section class="part" id="part7">
+    <header>
+      <div class="partno">Part 7 · D7 up close</div>
+      <h2>Security operations: see it, act on it, prove it later</h2>
+      <p class="prose muted">D1 to D3 make decisions and D6 shares them. D7 gets those decisions to people and keeps a record nobody can quietly change: alerts reach whoever is on call, audit records land in a write-once archive, and every admin action is made by a named person with a role.</p>
+    </header>
+
+    <h3 class="sub">Where events go</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Sink</th><th>Receives</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">1</td><td><code>audit_file</code></td><td>Every decision</td><td>The local hash chain; required, cannot be turned off</td></tr>
+        <tr><td class="id d">2</td><td><code>log</code></td><td>Audit records and alerts</td><td>JSON lines on standard output for CloudWatch Logs; with <code>metrics</code>, CloudWatch Embedded Metric Format turns counts by event type into metrics with no API call</td></tr>
+        <tr><td class="id d">3</td><td><code>sns</code>, <code>webhook</code></td><td>Alerts</td><td>Each has its own minimum severity. The same alert from the same principal goes out once a minute and the next one carries the count; approval requests and kill switch changes always go out</td></tr>
+        <tr><td class="id d">4</td><td><code>s3_archive</code></td><td>The audit file</td><td>New complete lines every minute and at shutdown, one object per segment, checked against the chain before upload; S3 Object Lock keeps each segment for its retention period</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose muted">A sink never changes a decision. Delivery runs in the background; a failing sink is counted in <code>/admin/status</code> and the request carries on.</p>
+
+    <h3 class="sub">Why the archive matters</h3>
+    <p class="prose muted">A local hash chain notices one edited record, but not a deleted file, and an ECS task's disk disappears when the task is replaced. Segments in an Object Lock bucket survive both. <code>agentshield audit verify-archive</code> checks every chain: the records in each segment, consecutive segment numbers, and each segment starting where the previous one ended. Object Lock protects object versions, not names, so each segment is written once and only if its key is new, and the check reads every version: a segment that gained a second version or a delete marker fails, and the first version is the record. What it cannot cover is the last minute before a task is compromised, which has not been uploaded yet.</p>
+
+    <h3 class="sub">Who may do what</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Role</th><th>Can</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">V</td><td>viewer</td><td>Status, pending approvals, alerts, audit, the console</td></tr>
+        <tr><td class="id d">A</td><td>approver</td><td>Also approve or deny a held tool call</td></tr>
+        <tr><td class="id d">O</td><td>operator</td><td>Also kill and resume, quarantine and release, revoke approvals</td></tr>
+      </tbody>
+    </table></div>
+    <p class="prose muted">People sign in through the load balancer's OIDC login. The gateway checks the ALB's ES256 signature, that the configured ALB signed it, and that it has not expired, then grants roles by email or group from <code>agentshield.yaml</code>. Audit records and approvals carry the person's email. Changes from a browser session must send a header a cross-site form cannot set. The old admin token stays as break-glass with every role, and each change made with it raises an alert.</p>
+
+  </section>
+
+  <!-- ===================================================== PART 8 -->
+  <section class="part" id="part8">
+    <header>
+      <div class="partno">Part 8 · D4 up close</div>
+      <h2>The knowledge base: checked on the way in, filtered on the way out</h2>
+      <p class="prose muted">Every chunk the RAG server returns lands in the model's context word for word. A poisoned wiki page answers every future question with the attacker's text, and a search that ignores permissions shows salary bands to a sales agent. D4 checks each document once, before it is embedded, and checks each chunk again, against the signed-in user, before the agent reads it.</p>
+    </header>
+
+    <h3 class="sub">On the way in: agentshield ingest scan</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Step</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">1</td><td>What a reader sees</td><td>Only visible text is kept. Hidden elements, white or zero-size text, off-screen text and comments are set aside; Unicode tag characters are decoded to the ASCII they hide; zero-width characters go; text is normalized so full-width letters read as plain ones</td></tr>
+        <tr><td class="id d">2</td><td>Check</td><td>The profile's own modules read the document as untrusted data, custom ones included. Instructions in the visible text, anything at all in the hidden text, tag characters, or a document with no groups: quarantine, with reasons and no copy of the text</td></tr>
+        <tr><td class="id d">3</td><td>Clean</td><td>Secrets and ID numbers are redacted; the document is kept</td></tr>
+        <tr><td class="id d">4</td><td>Seal</td><td>Each chunk carries its source, the groups allowed to read it and an HMAC seal over all of it; only the ingestion job and the gateway hold the key</td></tr>
+        <tr><td class="id d">5</td><td>Record</td><td>One audit record per document through the D7 sinks, and one alert per run when anything was held</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">On the way out: the RAG search tool through D2</h3>
+    <div class="table"><table>
+      <thead><tr><th></th><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="id d">1</td><td>Who is asking</td><td>The user's JWT is verified against the identity provider's keys; approvals and cached tool lists follow the verified user, and the RAG server receives the verified user and groups</td></tr>
+        <tr><td class="id d">2</td><td>First filter, in the RAG server</td><td>A LanceDB prefilter so the search only ranks chunks the user may read</td></tr>
+        <tr><td class="id d">3</td><td>Seal</td><td>A chunk that was edited after ingestion, or written straight into the store, fails its seal: dropped, with an alert that does not count against the user</td></tr>
+        <tr><td class="id d">4</td><td>Groups</td><td>Chunks outside the user's groups are dropped, even if the RAG server forgot to filter</td></tr>
+        <tr><td class="id d">5</td><td>Rebuild</td><td>The whole result is rebuilt from the sealed fields of the chunks that remain. The server's own text, extra fields on a chunk and any other keys it sent (a summary, say) are dropped, since none of them is covered by a seal or a permission check. Then D2's usual result checks run</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">What D4 cannot do</h3>
+    <ul class="prose muted">
+      <li>Catch text that is wrong but looks normal ("refunds within 365 days"). That needs review of who may publish.</li>
+      <li>Fix wrong permissions given at ingestion: it enforces the groups it is told.</li>
+      <li>Protect retrieval the app does itself and pastes into the prompt; that path only gets D1's input checks.</li>
+    </ul>
+
+  </section>
+
+  <!-- ===================================================== PART 9 -->
+  <section class="part" id="part9">
+    <header>
+      <div class="partno">Part 9 · Framework</div>
+      <h2>How the code is organized</h2>
+      <p class="prose muted">Every layer is built on the same pipeline. A request arrives through an adapter, passes the core's mandatory controls and a set of pluggable defense modules, is acted on by rules set per profile, goes to a model through a provider, and every event goes to pluggable sinks. Security promises stay in the core; detection and outputs are plugins.</p>
+    </header>
+    <div class="flowline">client ─▶ Adapter ─▶ Admission ─▶ Defense modules ─▶ Enforcement ─▶ Provider ─▶ model
+                                                                    │
+                                     Containment (shared state) ◀───┴───▶ Sinks (audit · alerts · metrics)</div>
+    <div class="concepts" id="concepts"></div>
+
+    <h3 class="sub">One configuration file</h3>
+    <p class="prose muted">Providers, models, profiles, sinks, shared state, MCP servers and the egress proxy live in one <code>agentshield.yaml</code>, organized by profile. Deployment secrets and limits stay in environment variables; the file only names them. Unknown fields, modules, providers or models fail at startup.</p>
+    <pre class="cfg" id="cfg"></pre>
+
+  </section>
+
+  <!-- ===================================================== PART 10 -->
+  <section class="part" id="part10">
+    <header>
+      <div class="partno">Part 10 · Portability</div>
+      <h2>The same design on any cloud</h2>
+      <p class="prose muted">AgentShield's layers attach to roles in the architecture, not to AWS products. Swap each AWS service for its counterpart and the layers stay where they are. Claude is reachable directly from Anthropic on every cloud, or through the cloud's own model platform where it is offered.</p>
+    </header>
+    <div class="table"><table>
+      <thead><tr><th>Role in the design</th><th>AWS (this page)</th><th>Google Cloud</th><th>Microsoft Azure</th><th>Layers that attach</th></tr></thead>
+      <tbody id="cloud-table"></tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    <span>Illustrative reference architecture for a typical deployment. Service names are cloud products; search vendors are examples.</span>
+    <span>Author: Brian Chen. This page describes the design only; the AgentShield source code is confidential and not intended to be shared.</span>
+  </footer>
+</div>
+
+<!-- diagram template, cloned once per part -->
+<template id="dg-tpl">
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="How Claude is reached">
+      <button type="button" data-mode="api" aria-pressed="true">Claude via Anthropic API</button>
+      <button type="button" data-mode="bedrock" aria-pressed="false">Claude via Amazon Bedrock</button>
+    </div>
+    <label class="toggle"><input type="checkbox" data-ov="tb"><span class="sw" style="background:var(--trust)"></span>Trust boundaries</label>
+    <label class="toggle"><input type="checkbox" data-ov="un"><span class="sw" style="background:var(--warn)"></span>Untrusted text reaching Claude</label>
+  </div>
+  <div class="layout">
+    <div style="display:grid; gap:14px; min-width:0">
+      <div class="diagram"><svg viewBox="0 0 1250 880" xmlns="http://www.w3.org/2000/svg" role="img"></svg></div>
+      <div class="panel inspector">
+        <h3 data-r="i-title">Click any component</h3>
+        <p class="muted" data-r="i-desc"></p>
+        <dl data-r="i-dl"></dl>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="panel">
+        <h3>Walk through one question</h3>
+        <div class="caption" data-r="caption"></div>
+        <div class="stepnav">
+          <button type="button" class="btn" data-r="prev">Back</button>
+          <button type="button" class="btn primary" data-r="next">Start</button>
+          <button type="button" class="btn" data-r="clear">Show all</button>
+        </div>
+        <ol class="steps" data-r="steps"></ol>
+      </div>
+    </aside>
+  </div>
+</template>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+
+  // ------------------------------------------------------------------ components
+  // trust: un = attacker can influence directly, semi = holds data from outside, in = team-controlled
+  // s / sA: subtitle lines before / with AgentShield. def: a defense node (shown only with AgentShield).
+  var N = {
+    users:   { b: [20, 345, 120, 90], t: "Users", s: ["web · mobile"], ext: 1, trust: "un",
+               d: "People using the chatbot through the web or mobile client.", holds: "Their own session token", gain: "Anyone can type anything here; this is the first injection point." },
+    ecr:     { b: [185, 38, 130, 56], t: "ECR", s: ["container images"], trust: "in",
+               d: "Registry for the app, MCP, gateway and ingestion images.", holds: "Every image that runs", gain: "A replaced image runs with the task's full permissions (supply chain)." },
+    cw:      { b: [330, 38, 160, 56], t: "CloudWatch", s: ["logs · metrics · traces"], trust: "in",
+               d: "Logs and metrics from every task.", holds: "Prompts, tool calls and answers if the app logs them", gain: "Logs often contain customer data and tokens in clear text.",
+               dA: "Logs and metrics from every task. With AgentShield, gateway logs are redacted before they are written and content logging is off by default." },
+    ingest:  { b: [560, 38, 200, 56], t: "Ingestion job", s: ["ECS task · chunk + embed"], trust: "semi",
+               d: "Scheduled task that pulls documents, splits them into chunks, embeds them with Bedrock and writes LanceDB tables to S3.", holds: "Write access to the knowledge base", gain: "Anything it ingests is later retrieved as trusted-looking context." },
+    guard:   { b: [790, 38, 170, 56], t: "Ingestion guard", s: ["scan · tag ACL + source"], def: 1, id: "D4" },
+    nat:     { b: [215, 150, 110, 62], t: "NAT gateway", s: ["internet egress"], sA: ["only D3 egress"], trust: "in",
+               d: "Path from the private subnets to the internet.", holds: "No data, but every outbound connection passes it", gain: "Without an allowlist, any task can reach any host, so stolen data can leave freely.",
+               dA: "Still the path to the internet, but only the egress proxy (D3) and the LLM gateway's allowlisted provider route may use it. Security groups block every other task." },
+    alb:     { b: [215, 345, 110, 90], t: "ALB + WAF", s: ["public entry", "TLS · JWT check"], trust: "in",
+               d: "Public load balancer with AWS WAF. Terminates TLS and forwards chat requests to the agent app.", holds: "Nothing persistent", gain: "WAF rules see HTTP, not meaning; prompt injection passes through as ordinary text." },
+    llmgw:   { b: [370, 160, 295, 78], t: "LLM gateway", s: ["screen input + history · wrap tool data", "output DLP · tool-call policy · approvals", "holds the Claude key; app gets a gateway key"], def: 1, id: "D1" },
+    app:     { b: [370, 290, 175, 200], t: "Agent app", s: ["ECS Fargate service", "chat API + agent loop", "Claude SDK client", "MCP client", "IAM task role"],
+               sA: ["ECS Fargate service", "chat API + agent loop", "no internet route", "reaches only D1, D2", "holds no model or", "tool credentials"], trust: "in",
+               d: "The core service. Keeps the conversation, sends it to Claude with the tool list, executes the tools Claude asks for through MCP, and loops until Claude answers.", holds: "Claude credentials, conversation state, authority to call every tool", gain: "Whoever steers this loop, through the model or directly, acts with all of its tools.",
+               dA: "Same agent loop, but every model call goes through D1 and every tool call through D2. It holds a gateway key instead of the Claude key and has no direct route to MCP servers or the internet.", holdsA: "Conversation state and a gateway key", gainA: "A compromised app can still misuse its own session, but D2 checks each tool call against the signed-in user's rights and D3 blocks unknown destinations." },
+    mcpgw:   { b: [565, 290, 100, 200], t: "MCP gateway", s: ["per-user tool", "allowlist", "pinned tool", "descriptions", "argument and", "result checks", "approvals"], def: 1, id: "D2" },
+    mcpweb:  { b: [690, 160, 175, 70], t: "Web search MCP", s: ["ECS service · search + fetch"], sA: ["fetches only via D3"], trust: "semi",
+               d: "MCP server with web_search and fetch_url tools. Calls a search API and downloads pages.", holds: "Search API key; outbound internet access", gain: "Returns attacker-written web pages straight into the conversation; fetch_url can be pointed anywhere.",
+               holdsA: "Search API key", gainA: "Its pages are scanned by D2 before the app sees them, and D3 only lets it reach allowlisted hosts." },
+    mcpint:  { b: [690, 355, 175, 70], t: "Internal API MCP", s: ["ECS service · CRM, orders"], sA: ["user-scoped requests"], trust: "in",
+               d: "MCP server that wraps internal APIs, for example get_order, lookup_customer, create_ticket.", holds: "Service credentials for internal systems", gain: "Read or change customer data with the service account's rights, not the end user's.",
+               gainA: "D2 passes the signed-in user's identity, so calls run with that user's rights; write tools need approval." },
+    mcprag:  { b: [690, 535, 175, 70], t: "RAG MCP", s: ["ECS service · LanceDB client"], sA: ["ACL-filtered search"], trust: "semi",
+               d: "MCP server with a search_kb tool. Embeds the query with Bedrock and runs vector search over LanceDB tables on S3.", holds: "Read access to the knowledge base", gain: "Without per-user filters it returns documents the user should not see; poisoned chunks flow into context.",
+               gainA: "Results are filtered by the user's groups (tags written by D4) and scanned by D2 before they reach the app." },
+    egress:  { b: [895, 165, 135, 82], t: "Egress proxy", s: ["domain allowlist", "SSRF + size caps", "logs every request"], def: 1, id: "D3" },
+    intapi:  { b: [905, 355, 120, 70], t: "Internal APIs", s: ["CRM · orders", "customer data"], trust: "in",
+               d: "Existing company services the chatbot is allowed to call.", holds: "Customer and order records", gain: "The most valuable data in the system." },
+    cognito: { b: [185, 665, 125, 80], t: "Cognito", s: ["user sign-in · JWT"], trust: "in",
+               d: "User pool that signs users in and issues JWTs checked at the ALB or in the app.", holds: "User identities", gain: "Identity is known at the edge but often not passed down to tools.",
+               dA: "User pool that signs users in. With AgentShield, the user's ID and groups from the JWT travel with each tool call through D2 to the MCP servers." },
+    ddb:     { b: [325, 665, 160, 80], t: "DynamoDB", s: ["conversation history"], sA: ["history", "+ shield state"], trust: "semi", defA: 1, id: "D6",
+               d: "Stores each conversation so the next turn can resend it.", holds: "Every message, tool result and answer", gain: "Planted text replays into every later turn of that conversation.",
+               dA: "Conversation history, plus AgentShield's shared state (D6): breaker counts, quarantine, kill switch and approvals, written with atomic updates so every gateway task sees the same state.", holdsA: "History and security state" },
+    s3:      { b: [500, 665, 185, 80], t: "S3 · LanceDB", s: ["vector tables + docs"], sA: ["tables tagged by D4"], trust: "semi",
+               d: "LanceDB tables and source documents for the knowledge base, written by the ingestion job.", holds: "All knowledge base content and embeddings", gain: "Write access means persistent poisoning; read access means a copy of the internal docs.",
+               gainA: "Only content that passed D4 is written, each chunk carries its source and access tags, and only the ingestion job's role can write." },
+    bedrock: { b: [700, 665, 160, 80], t: "Bedrock", s: ["embeddings", "+ Claude (Bedrock mode)"], trust: "in",
+               d: "Embedding model for queries and documents. In Bedrock mode it also serves Claude, reached through a VPC endpoint.", holds: "Model access billed to the account", gain: "Spend, and in Bedrock mode the same model access as the app.",
+               dA: "Embeddings, and Claude in Bedrock mode. With AgentShield only D1 may invoke the Claude models (VPC endpoint policy and IAM)." },
+    secrets: { b: [875, 665, 175, 80], t: "Secrets Manager", s: ["API keys · service creds"], sA: ["keys read by D1, D2, D3"], trust: "in",
+               d: "Anthropic key, search API key, internal API credentials. Read by the tasks through their IAM roles.", holds: "Every credential the system uses", gain: "Long-lived keys usable from anywhere.",
+               dA: "Provider and service credentials are read only by the gateway tasks that use them. The agent app's role cannot read them." },
+    ctrl:    { b: [185, 785, 235, 70], t: "Control plane", s: ["kill switch · quarantine", "approvals console · SSO"], def: 1, id: "D7" },
+    archive: { b: [435, 785, 190, 70], t: "Audit archive", s: ["S3 Object Lock", "hash chain anchored"], def: 1, id: "D7" },
+    alerts:  { b: [640, 785, 210, 70], t: "Alerts", s: ["SNS → Slack / PagerDuty", "breaker · kill · approvals"], def: 1, id: "D7" },
+    docsrc:  { b: [1085, 38, 150, 56], t: "Document sources", s: ["Confluence · uploads"], ext: 1, trust: "un",
+               d: "Where knowledge base content comes from: wikis, shared drives, user uploads.", holds: "Source documents", gain: "Anyone who can edit a page can write into the chatbot's context." },
+    search:  { b: [1085, 140, 150, 56], t: "Search API", s: ["e.g. Tavily or Brave"], ext: 1, trust: "un",
+               d: "Third-party search service used by the web search MCP.", holds: "Your queries", gain: "Queries can carry data out; results are attacker-influenced." },
+    web:     { b: [1085, 206, 150, 56], t: "Public websites", s: ["pages fetched by tools"], ext: 1, trust: "un",
+               d: "Arbitrary pages returned by search or fetched by URL.", holds: "Anything", gain: "The classic indirect prompt injection carrier." },
+    claude:  { b: [1085, 330, 150, 90], t: "Claude API", s: ["Anthropic", "Messages API", "outside AWS"], ext: 1, trust: "in",
+               d: "Anthropic's hosted Claude, reached over the internet. In Bedrock mode this node is not used.", holds: "The prompt and context of each call", gain: "The model only proposes text and tool calls; the app decides what runs." }
+  };
+
+  // ------------------------------------------------------------------ defense layers
+  var D = [
+    { id: "D1", name: "LLM gateway", where: "Between the agent app and Claude (Anthropic API or Bedrock)",
+      what: "Screens the newest turn, replayed history and tool results; wraps tool data as untrusted; redacts secrets, PII, canaries and exfil links in answers; checks every proposed tool call against policy; holds high-impact calls for approval; breaker, kill switch, hash-chained audit.",
+      layers: "L1 · L4 · L5 · L6 · L7B · L10", covers: "TB2 · U1 · U6 (and U2–U4 when results return)",
+      note: "See Part 3. Speaks OpenAI Chat Completions and Anthropic Messages and routes to the Anthropic API, Bedrock or any OpenAI-compatible backend. The app changes only its base URL and key." },
+    { id: "D2", name: "MCP gateway", where: "Between the agent app and the three MCP servers",
+      what: "Exposes only the tools this user's role may use; pins each server's tool descriptions and blocks changes; validates arguments where tools actually run; forwards the signed-in user's identity; scans tool results before they reach the app; holds write actions for approval.",
+      layers: "L2 · L6 · L7A · L7B", covers: "TB3 · TB5 · U2 · U3 · U4 · U5",
+      note: "See Part 5. Allowlists are per profile; the end user's sign-in token is verified, and tools receive the verified user and groups. Speaks MCP 2026-07-28." },
+    { id: "D3", name: "Egress proxy", where: "In front of the NAT gateway for every outbound request",
+      what: "Domain allowlist per task (Anthropic API, search API, nothing else); fetch_url blocked from private ranges, metadata endpoints and DNS rebinding; response size caps; one log line per request.",
+      layers: "L7A · L7C", covers: "TB4 · exfiltration paths",
+      note: "See Part 6. AgentShield's own proxy checks the resolved address and shares the kill switch; Network Firewall or security groups remain the backstop that makes it the only way out." },
+    { id: "D4", name: "Ingestion guard + retrieval ACL", where: "Between document sources and the ingestion job; filter inside the RAG MCP",
+      what: "Scans documents for hidden instructions, invisible text, secrets and PII before they are embedded; quarantines flagged documents; tags each chunk with its source and allowed groups; RAG search filters by the user's groups.",
+      layers: "L3 · L9", covers: "TB6 · U3",
+      note: "See Part 8. The profile's own modules check documents once; sealed chunks and the user's verified groups are checked again in D2 on every search." },
+    { id: "D5", name: "Least privilege and identity", where: "Security groups, IAM task roles, VPC endpoint policies",
+      what: "The app reaches only D1 and D2; MCP servers accept only D2; only D1 may invoke Claude; each task role reads only its own secrets; internal APIs receive user-scoped identity, not a shared service account.",
+      layers: "L2 · L7A", covers: "TB3 · TB5 · ASI03",
+      note: "Containment binds to authenticated callers, and tools act with the verified user's identity. Subnets, security groups, per-task IAM roles, VPC endpoint policies and DNS Firewall make the gateways and the egress proxy the only paths." },
+    { id: "D6", name: "Shared security state", where: "DynamoDB table used by every gateway task",
+      what: "Breaker counts, quarantine list, kill switch and single-use approvals, with atomic updates and TTL cleanup, so containment holds across ECS tasks and restarts.",
+      layers: "L10 (Respond)", covers: "ASI08 · ASI10 at scale",
+      note: "See Part 4. One contract, three interchangeable backends: memory for a single process, SQLite for one host, DynamoDB for several tasks." },
+    { id: "D7", name: "Security operations", where: "Control plane, audit archive and alerts",
+      what: "Kill switch, quarantine and approval decisions behind SSO; hash-chained audit records shipped to S3 with Object Lock; alerts through SNS to Slack or PagerDuty.",
+      layers: "L10 · Respond · Recover", covers: "Detection and response for every layer",
+      note: "See Part 7. Sinks for logs, metrics, SNS and webhooks; the audit archive on S3 Object Lock; admin sign-in through the ALB with viewer, approver and operator roles; a browser console." }
+  ];
+  var DBY = {}; D.forEach(function (d) { DBY[d.id] = d; });
+
+  // ------------------------------------------------------------------ edges (m: b before only, a after only; pr: api / bed)
+  var E = {
+    user_alb:  { p: [[140, 390], [215, 390]], l: ["HTTPS+JWT", 148, 382] },
+    user_cog:  { p: [[80, 435], [80, 705], [185, 705]], l: ["sign in", 86, 600] },
+    alb_app:   { p: [[325, 390], [370, 390]] },
+    app_ddb:   { p: [[420, 490], [420, 665]], l: ["history", 426, 600] },
+    int_api:   { p: [[865, 390], [905, 390]] },
+    rag_s3:    { p: [[695, 605], [695, 640], [640, 640], [640, 665]], l: ["vector search", 701, 628] },
+    rag_bed:   { p: [[820, 605], [820, 665]], l: ["embed", 826, 640] },
+    app_web_b: { m: "b", p: [[545, 320], [678, 320], [678, 195], [690, 195]] },
+    app_int_b: { m: "b", p: [[545, 390], [690, 390]] },
+    app_rag_b: { m: "b", p: [[545, 460], [678, 460], [678, 570], [690, 570]] },
+    app_cl_b:  { m: "b", pr: "api", p: [[455, 290], [455, 262], [1062, 262], [1062, 372], [1085, 372]], l: ["Claude Messages API · via NAT", 700, 255] },
+    app_bed_b: { m: "b", pr: "bed", p: [[500, 490], [500, 652], [740, 652], [740, 665]], l: ["VPC endpoint", 518, 646] },
+    web_s_b:   { m: "b", p: [[865, 186], [1085, 168]], l: ["query · via NAT", 905, 166] },
+    web_p_b:   { m: "b", p: [[865, 210], [1085, 234]], l: ["fetch pages", 920, 238] },
+    ingest_b:  { m: "b", p: [[1085, 66], [760, 66]], l: ["documents", 880, 60] },
+    app_llm:   { m: "a", p: [[455, 290], [455, 238]] },
+    llm_cl:    { m: "a", pr: "api", p: [[600, 160], [600, 146], [1062, 146], [1062, 372], [1085, 372]], l: ["Claude API · allowlisted egress", 700, 141] },
+    llm_bed:   { m: "a", pr: "bed", p: [[370, 200], [347, 200], [347, 652], [740, 652], [740, 665]], l: ["VPC endpoint", 518, 646] },
+    app_gw:    { m: "a", p: [[545, 390], [565, 390]] },
+    gw_web:    { m: "a", p: [[665, 320], [678, 320], [678, 195], [690, 195]] },
+    gw_int:    { m: "a", p: [[665, 390], [690, 390]] },
+    gw_rag:    { m: "a", p: [[665, 460], [678, 460], [678, 570], [690, 570]] },
+    web_eg:    { m: "a", p: [[865, 200], [895, 200]] },
+    eg_s:      { m: "a", p: [[1030, 186], [1085, 168]] },
+    eg_p:      { m: "a", p: [[1030, 214], [1085, 234]] },
+    doc_guard: { m: "a", p: [[1085, 66], [960, 66]], l: ["documents", 990, 60] },
+    guard_ing: { m: "a", p: [[790, 66], [760, 66]] }
+  };
+
+  var TB = [
+    { id: "TB1", at: { b: [178, 404] }, name: "Internet → ALB", what: "User messages from anyone with an account", cov: "D1" },
+    { id: "TB2", at: { b: [1062, 300], bB: [620, 652], a: [1062, 300], aB: [347, 430] }, name: "Agent app ↔ LLM provider", what: "Full context out; model text and tool calls back", cov: "D1 · D5" },
+    { id: "TB3", at: { b: [678, 255] }, name: "Agent app ↔ MCP servers", what: "Tool calls with arguments out; tool results and tool descriptions back", cov: "D2 · D5" },
+    { id: "TB4", at: { b: [975, 205], a: [1056, 222] }, name: "Web MCP ↔ public internet", what: "Search queries out; web pages back", cov: "D3 · D2" },
+    { id: "TB5", at: { b: [885, 404] }, name: "Internal MCP ↔ internal APIs", what: "Requests to customer systems", cov: "D2 · D5" },
+    { id: "TB6", at: { b: [935, 80], a: [1020, 80] }, name: "Document sources → ingestion", what: "Editable documents become knowledge base content", cov: "D4" }
+  ];
+  var UN = [
+    { id: "U1", at: [100, 365], name: "User messages", how: "Typed by the user, any language or encoding", cov: "D1" },
+    { id: "U2", at: [1140, 286], name: "Web search results and pages", how: "Returned by web_search and fetch_url", cov: "D2 · D1" },
+    { id: "U3", at: [878, 560], name: "Retrieved knowledge base chunks", how: "Returned by search_kb from LanceDB", cov: "D4 · D2 · D1" },
+    { id: "U4", at: [1036, 345], name: "Internal API responses", how: "Free-text fields such as ticket notes or customer comments", cov: "D2 · D1" },
+    { id: "U5", at: [878, 150], name: "MCP tool descriptions", how: "Sent by each MCP server in tools/list and passed to Claude", cov: "D2 · D1" },
+    { id: "U6", at: [500, 662], name: "Replayed conversation history", how: "Loaded from DynamoDB and resent every turn", cov: "D1" }
+  ];
+  var ASI = [
+    ["ASI01", "Agent goal hijack", "A web page, document or ticket note tells the agent to do something else", "D1 · D2 · D4"],
+    ["ASI02", "Tool misuse", "fetch_url aimed at internal hosts; create_ticket used to carry data out", "D1 · D2 · D3"],
+    ["ASI03", "Identity and privilege abuse", "Internal API MCP acts with a service account instead of the user's rights", "D2 · D5"],
+    ["ASI04", "Agentic supply chain", "An MCP server changes its tool descriptions or ships a poisoned image", "D2 · D5"],
+    ["ASI05", "Unexpected code execution", "A tool that runs code or shell is offered to the model", "D1 · D2 · D3"],
+    ["ASI06", "Memory and context poisoning", "Poisoned knowledge base chunks or replayed history steer later answers", "D4 · D1"],
+    ["ASI07", "Insecure inter-agent communication", "Not present in this single-agent design; applies if sub-agents are added", "future"],
+    ["ASI08", "Cascading failures", "A tool loop or retry storm multiplies calls and cost", "D1 · D6"],
+    ["ASI09", "Human-agent trust exploitation", "A convincing answer asks a support agent to approve a harmful action", "D1 · D2 · D7"],
+    ["ASI10", "Rogue agents", "The agent keeps acting outside its task after being steered", "D1 · D6 · D7"]
+  ];
+
+
+  var CLOUD = [
+    ["Container runtime", "ECS Fargate", "Cloud Run or GKE", "Container Apps or AKS", "D1 · D2 · D3 run here"],
+    ["Public entry and WAF", "ALB + AWS WAF", "Cloud Load Balancing + Cloud Armor", "Application Gateway or Front Door + WAF", "—"],
+    ["User sign-in", "Cognito", "Identity Platform", "Microsoft Entra External ID", "D2 · D5 use its claims"],
+    ["Claude", "Anthropic API or Amazon Bedrock", "Anthropic API or Vertex AI", "Anthropic API or Microsoft Foundry", "D1"],
+    ["Private path to the model platform", "VPC endpoint", "Private Service Connect", "Private endpoint", "D1 · D5"],
+    ["Embeddings", "Bedrock", "Vertex AI", "Azure OpenAI or Foundry", "D4"],
+    ["Conversation history and shield state", "DynamoDB", "Firestore", "Cosmos DB", "D6"],
+    ["Knowledge base storage (LanceDB tables)", "S3", "Cloud Storage", "Blob Storage", "D4"],
+    ["Secrets", "Secrets Manager", "Secret Manager", "Key Vault", "D5"],
+    ["Controlled internet egress", "NAT gateway + Network Firewall or proxy", "Cloud NAT + Secure Web Proxy", "NAT Gateway + Azure Firewall", "D3"],
+    ["Logs and metrics", "CloudWatch", "Cloud Logging and Monitoring", "Azure Monitor", "D7"],
+    ["Write-once audit archive", "S3 Object Lock", "Cloud Storage Bucket Lock", "Blob immutable storage", "D7"],
+    ["Alert routing", "SNS", "Cloud Monitoring alerting or Pub/Sub", "Azure Monitor action groups", "D7"]
+  ];
+
+  var STEPS = [
+    { t: "Sign in", n: ["users", "cognito"], e: ["user_cog"], x: "The user signs in through Cognito and receives a JWT.",
+      checks: [["D5", "The JWT's user ID and groups are kept for the whole request, so later checks can use them."]] },
+    { t: "Send a question", n: ["users", "alb", "app"], e: ["user_alb", "alb_app"], x: "The question goes over HTTPS to the ALB. WAF checks HTTP-level rules, the JWT is verified, and the request reaches an agent app task.",
+      c: '"How do I reset 2FA for a customer?\n Also check the status of order 8812."' },
+    { t: "Load the conversation", n: ["app", "ddb"], e: ["app_ddb"], x: "The app loads this conversation's earlier messages and tool results from DynamoDB." },
+    { t: "Ask Claude, with tools", n: ["app", "claude", "secrets", "nat"], nB: ["app", "bedrock"], e: ["app_cl_b"], eB: ["app_bed_b"],
+      nA: ["app", "llmgw", "claude", "secrets"], nAB: ["app", "llmgw", "bedrock"], eA: ["app_llm", "llm_cl"], eAB: ["app_llm", "llm_bed"],
+      x: "The app sends the history plus the tool list it got from the MCP servers (tools/list) to Claude.",
+      c: 'tools: web_search, fetch_url, search_kb,\n       get_order, lookup_customer, create_ticket',
+      checks: [["D1", "Screens the new question and replayed history (U1, U6); flagged history is replaced, a flagged new question is blocked."],
+               ["D1", "Removes tools the policy denies; adds the platform system message; calls Claude with its own key."],
+               ["D3", "Anthropic API: the gateway's call leaves only to the allowlisted API host.", "api"]] },
+    { t: "Claude asks for the knowledge base", n: ["app", "mcprag", "bedrock", "s3"], e: ["app_rag_b", "rag_bed", "rag_s3"],
+      nA: ["app", "llmgw", "mcpgw", "mcprag", "bedrock", "s3"], eA: ["app_llm", "app_gw", "gw_rag", "rag_bed", "rag_s3"],
+      x: "Claude returns tool_use search_kb. The RAG MCP embeds the query with Bedrock and runs a vector search over LanceDB on S3.",
+      c: 'tool_use: search_kb({"query": "reset 2FA customer"})',
+      checks: [["D1", "Checks the proposed call: tool offered, arguments match the schema, policy allows it."],
+               ["D2", "Confirms this user may use search_kb and passes the user's groups to the RAG MCP."],
+               ["D4", "Only chunks tagged for those groups are returned."],
+               ["D2", "Scans the returned chunks (U3); the next model call wraps them as untrusted data (D1)."]] },
+    { t: "Claude asks for a web search", n: ["app", "mcpweb", "nat", "search", "web"], e: ["app_web_b", "web_s_b", "web_p_b"],
+      nA: ["app", "llmgw", "mcpgw", "mcpweb", "egress", "search", "web"], eA: ["app_llm", "app_gw", "gw_web", "web_eg", "eg_s", "eg_p"],
+      x: "The next tool call goes to the web search MCP, which calls the search API and may fetch result pages.",
+      c: 'tool_use: web_search({"q": "vendor 2FA reset steps 2026"})',
+      checks: [["D1", "Allows web_search; a secret or canary in the query would be denied."],
+               ["D3", "The search API is on the allowlist; fetch_url to private ranges or metadata endpoints is refused."],
+               ["D2", "Scans pages before the app sees them (U2); a page carrying instructions is replaced."]] },
+    { t: "Claude asks an internal API", n: ["app", "mcpint", "intapi", "secrets"], e: ["app_int_b", "int_api"],
+      nA: ["app", "llmgw", "mcpgw", "mcpint", "intapi"], eA: ["app_llm", "app_gw", "gw_int", "int_api"],
+      x: "get_order runs through the internal API MCP, which calls the orders service.",
+      c: 'tool_use: get_order({"order_id": "8812"})',
+      checks: [["D2", "Calls the orders API as this user, so order 8812 is returned only if the user may see it."],
+               ["D2", "Write tools such as create_ticket are held for human approval (D7 console)."],
+               ["D2", "Free-text fields in the response (U4) are scanned before they reach the model."]] },
+    { t: "Claude answers", n: ["app", "claude", "ddb", "alb", "users", "cw"], nB: ["app", "bedrock", "ddb", "alb", "users", "cw"], e: ["app_cl_b", "app_ddb", "alb_app", "user_alb"], eB: ["app_bed_b", "app_ddb", "alb_app", "user_alb"],
+      nA: ["app", "llmgw", "claude", "ddb", "alb", "users", "archive", "alerts"], nAB: ["app", "llmgw", "bedrock", "ddb", "alb", "users", "archive", "alerts"], eA: ["app_llm", "llm_cl", "app_ddb", "alb_app", "user_alb"], eAB: ["app_llm", "llm_bed", "app_ddb", "alb_app", "user_alb"],
+      x: "With all tool results in context, Claude writes the final answer. The app stores the turn and streams the answer to the user.",
+      checks: [["D1", "Redacts secrets, PII, canaries and auto-loading links in the answer before release."],
+               ["D6", "New high findings update the shared breaker; a quarantined user is stopped on every task."],
+               ["D7", "One hash-chained audit record goes to the archive; high findings alert through SNS."]] },
+    { t: "Offline: knowledge base ingestion", n: ["docsrc", "ingest", "bedrock", "s3"], e: ["ingest_b"],
+      nA: ["docsrc", "guard", "ingest", "bedrock", "s3"], eA: ["doc_guard", "guard_ing"],
+      x: "The ingestion job pulls documents, chunks and embeds them with Bedrock, and writes LanceDB tables to S3.",
+      checks: [["D4", "Scans each document for hidden instructions, invisible text and secrets; flagged documents go to quarantine."],
+               ["D4", "Each chunk is tagged with its source and the groups allowed to read it."]] }
+  ];
+
+  // ------------------------------------------------------------------ static tables
+  function td(tr, text, cls) { var c = document.createElement("td"); if (cls) c.className = cls; c.textContent = text; tr.appendChild(c); return c; }
+  function rows(id, list, fn) { var tb = document.getElementById(id); list.forEach(function (r) { var tr = document.createElement("tr"); fn(tr, r); tb.appendChild(tr); }); }
+  rows("tb-table-1", TB, function (tr, r) { td(tr, r.id, "id tb"); td(tr, r.name); td(tr, r.what); });
+  rows("un-table-1", UN, function (tr, r) { td(tr, r.id, "id un"); td(tr, r.name); td(tr, r.how); });
+  rows("tb-table-2", TB, function (tr, r) { td(tr, r.id, "id tb"); td(tr, r.name); td(tr, r.cov, "cov"); });
+  rows("un-table-2", UN, function (tr, r) { td(tr, r.id, "id un"); td(tr, r.name); td(tr, r.cov, "cov"); });
+  rows("d-table", D, function (tr, d) {
+    td(tr, d.id, "id d"); td(tr, d.name); td(tr, d.where); td(tr, d.what); td(tr, d.layers, "cov"); td(tr, d.covers, "cov");
+  });
+  rows("asi-table", ASI, function (tr, r) { td(tr, r[0], "id"); td(tr, r[1]); td(tr, r[2]); td(tr, r[3], "cov"); });
+  rows("cloud-table", CLOUD, function (tr, r) { td(tr, r[0]); td(tr, r[1]); td(tr, r[2]); td(tr, r[3]); td(tr, r[4], "cov"); });
+
+
+  // ------------------------------------------------------------------ Part 3: D1 components
+  var COMP = [
+    { n: "①", t: "Inbound adapter", one: "Parses the client's protocol strictly into the internal format",
+      what: "Accepts the request, parses it strictly into the IR, and writes the final result back in the client's protocol.",
+      why: "Attacks hide where the checker and the model read a request differently: a duplicated model field, content in a field the checker ignores. The gateway accepts only what it fully understands.",
+      how: "Both adapters emit the IR. The /v1/messages adapter accepts model, max_tokens, system, messages, tools, tool_choice, thinking, output_config, stop_sequences, metadata, stream and cache_control; text, tool_use, tool_result, thinking and redacted_thinking blocks; rejects image and document blocks, duplicate keys and non-finite numbers." },
+    { n: "②", t: "Streaming reply", one: "Sends the checked answer back as a stream",
+      what: "When the client asks for stream: true, sends the answer as server-sent events.",
+      why: "The Claude SDK and most chat UIs stream by default.",
+      how: "The gateway calls the model without streaming, checks the full answer, then replays it as message_start, content_block_start / delta / stop, message_delta and message_stop. Revocation is checked between blocks." },
+    { n: "③", t: "Admission", one: "Who is calling, which profile, within limits",
+      what: "Authenticates the client key in constant time, derives the principal, selects the profile bound to that key, and enforces size, time, concurrency, rate limit, kill switch and quarantine.",
+      why: "Every later promise is tied to who is calling. If identity came from a header or a message, an attacker could relabel and escape containment.",
+      how: "Accepts the key from x-api-key (Claude SDK) or Authorization: Bearer. The app holds a gateway key, never the Anthropic key." },
+    { n: "④", t: "Routing and providers", one: "Public model name → backend, with gateway-held credentials",
+      what: "Maps the public model name to a backend and its own model ID and calls it with credentials only the gateway holds.",
+      why: "A compromised app cannot reach the model key, and clients can call only models the operator exposed.",
+      how: "anthropic: official SDK, key from the environment variable named in config. bedrock: the SDK's Bedrock Mantle client with the task's IAM role and SigV4 signing. Both keep the raw JSON so unknown fields can be dropped deliberately, and both honor the total timeout and size cap." },
+    { n: "⑤", t: "Input screening", one: "Every piece of text checked by where it came from",
+      what: "Sends each text to the defense modules by origin: the newest user turn blocks the request on a high finding; earlier history is replaced and deduplicated; the system prompt is untrusted unless configured; denied tools are hidden and poisoned tool descriptions dropped; flagged tool results are replaced and the request continues.",
+      why: "The model cannot tell instructions from data. Anyone who can put text anywhere in the context can try to steer the agent.",
+      how: "Replacement must be deterministic so history stays identical across turns; see the thinking rule below." },
+    { n: "⑥", t: "Context assembly", one: "Marks tool data as untrusted and adds the platform instruction",
+      what: "Wraps tool results in <untrusted_data> with closing tags escaped and adds a platform instruction that such content is data only.",
+      why: "Telling the model is a weak defense alone, but lowers success rates alongside blocking and replacement.",
+      how: "For Claude, the platform text goes at the end of the top-level system prompt and is byte-identical on every request, with no date or request ID in it." },
+    { n: "⑦", t: "Model call", one: "Calls the model and rebuilds the answer from known fields",
+      what: "Calls the model without streaming, caps time and size, and rebuilds the answer from known fields.",
+      why: "The backend's answer is untrusted input too; unknown fields must not ride through to the client.",
+      how: "Parse content blocks and stop_reason (end_turn, max_tokens, stop_sequence, tool_use, pause_turn, refusal). Keep stop_details on refusal. Keep Claude's tool_use IDs as they are; rewriting them would edit history. Pass thinking blocks through untouched and unscanned." },
+    { n: "⑧", t: "Server-tool policy", one: "Controls Claude's built-in web search, fetch and code execution",
+      what: "Decides whether tools that Anthropic runs inside the API call (web_search, web_fetch, code_execution, MCP connector) may be used, and how far.",
+      why: "These run inside one API call, so the gateway cannot stop a single search midway. It can only limit beforehand and inspect afterwards.",
+      how: "Denied by default. When allowed, the gateway rewrites their configuration to enforce allowed_domains or blocked_domains and max_uses, and limits MCP connector servers to an allowlist. Search queries in server_tool_use are checked for leaks; results go through output checks and audit. Bedrock has none of these tools." },
+    { n: "⑨", t: "Output checks", one: "Redact secrets, strip exfil links, withhold the rest",
+      what: "Redacts secrets, PII, canaries and auto-loading images to unknown domains in place; withholds a message with other high findings; re-validates structured output.",
+      why: "Models repeat what is in context or training data and can be steered into building leak links.",
+      how: "Changes only text blocks. If a thinking block follows a changed block in the same answer, that thinking block is removed before release." },
+    { n: "⑩", t: "Tool-call governance", one: "Every proposed tool call checked, then allowed, denied or held",
+      what: "Checks each proposed call: object arguments, call count, tool_choice, offered in this request, matching schema; then policy decides allow, deny or approval; secrets or canaries in arguments are always denied.",
+      why: "This is where an agent acts: SSRF, data stuffed into tickets, dangerous commands.",
+      how: "Claude's tool_use input is already an object. Denied or held calls are removed; if none remain, stop_reason becomes end_turn with an explanatory note." },
+    { n: "⑪", t: "Containment", one: "Breaker, quarantine, revocation, single-use approvals",
+      what: "Quarantines a principal after five flagged requests, halts everything on the kill switch, discards answers revoked mid-call, releases each approval once.",
+      why: "Detection without containment lets an attacker keep trying.",
+      how: "Snapshot of kill-switch and quarantine versions at admission and again before release; every decision is an atomic operation on the D6 store, so all gateway tasks agree." },
+    { n: "⑫", t: "Observability", one: "Hash-chained audit, alerts, health, admin",
+      what: "One hash-chained audit record per request without message text by default; alerts on high findings; health checks; admin API.",
+      why: "Response and recovery depend on knowing what happened and proving the record was not edited.",
+      how: "Record provider, profile and Claude's input_transformations. Alert on prefix_binding_mismatch, which means something edited history the model had seen." }
+  ];
+  var STATUS = { built: "st-built", extend: "st-partial", partial: "st-partial", new: "st-new" };
+  (function () {
+    var box = document.getElementById("d1-comps");
+    COMP.forEach(function (c, i) {
+      var d = document.createElement("details"); if (i === 0) d.open = true;
+      var sm = document.createElement("summary");
+      var n = document.createElement("span"); n.className = "n"; n.textContent = c.n;
+      var t = document.createElement("b"); t.textContent = c.t;
+      var one = document.createElement("span"); one.className = "one"; one.textContent = c.one;
+      sm.appendChild(n); sm.appendChild(t); sm.appendChild(one);
+      var body = document.createElement("div"); body.className = "body";
+      var dl = document.createElement("dl");
+      [["What", c.what], ["Why", c.why], ["How", c.how]].forEach(function (r) {
+        var dt = document.createElement("dt"); dt.textContent = r[0]; var dd = document.createElement("dd"); dd.textContent = r[1];
+        dl.appendChild(dt); dl.appendChild(dd);
+      });
+      body.appendChild(dl); d.appendChild(sm); d.appendChild(body); box.appendChild(d);
+    });
+  })();
+  rows("ir-table", [
+    ["Operator instructions", "system / developer messages", "system: [Segment]", "top-level system"],
+    ["Platform note mid-conversation", "—", "Turn(role = system_note)", "{\"role\": \"system\"} message (supported models)"],
+    ["User text", "user message", "Text(origin = user)", "text block in a user message"],
+    ["Model text", "assistant content", "Text(origin = model)", "text block in an assistant message"],
+    ["Model calls a tool", "tool_calls[], arguments as a JSON string", "ToolCall(id, name, args)", "tool_use block, input as an object"],
+    ["Tool result", "role: tool message", "ToolResult(call_id, text, is_error)", "tool_result block in a user message"],
+    ["Thinking", "—", "Opaque(kind = thinking), never edited", "thinking / redacted_thinking blocks"],
+    ["Server tools", "—", "Opaque(kind = server_tool, scan_text)", "server_tool_use and *_tool_result blocks"],
+    ["Cache markers", "—", "kept in the raw bytes", "cache_control"]
+  ], function (tr, r) { td(tr, r[0]); td(tr, r[1], "cov"); td(tr, r[2], "cov"); td(tr, r[3], "cov"); });
+  rows("think-table", [
+    ["Platform instruction in the system prompt", "No, if byte-identical every request", "Fixed text, no per-request values"],
+    ["Hiding denied tools", "No, if the tool set is stable for the conversation", "Same profile and policy version give the same set"],
+    ["Replacing injected history or tool results", "No, if replacement is deterministic", "The model saw the replaced version first and sees it again every turn"],
+    ["A message sent unchanged before, flagged only now", "Yes", "Option (c) below; (a) as fallback"],
+    ["Redacting an answer, removing a denied tool call", "No: the change happens before the client sees it", "Remove thinking that follows a changed block in the same answer"],
+    ["Rewriting tool_use IDs", "Yes", "Never done on the Anthropic path"]
+  ], function (tr, r) { td(tr, r[0]); td(tr, r[1]); td(tr, r[2]); });
+
+
+
+
+
+  // ------------------------------------------------------------------ Part 9: framework
+  var CONCEPTS = [
+    ["Adapter", "Which protocol, which events", "One per entry protocol: Chat Completions, Anthropic Messages, and MCP (D2).", "built", "Pick one"],
+    ["Admission", "Who, which profile, within limits", "Keys, principals, profile binding, limits, rate limit, kill switch, quarantine.", "built", "Always on"],
+    ["Defense modules", "What is wrong here?", "injection, dlp, exfil, guard_model, tool_policy, or your own. Each can run in enforce or observe mode.", "built", "Per profile"],
+    ["Enforcement", "What to do about it", "Block, replace, redact, withhold, hold for approval. Kept in the core; each profile sets its own thresholds.", "built", "Always on"],
+    ["Provider", "Which model backend", "openai_compatible, anthropic and bedrock. Holds the credentials.", "built", "Per route"],
+    ["Containment", "When to stop someone", "Breaker, quarantine, revocation, single-use approvals, in a shared store: memory, SQLite or DynamoDB (D6).", "built", "Always on"],
+    ["Sinks", "Where events go", "Audit, alerts and metrics as plugins: audit file, log with CloudWatch metrics, webhook, SNS and the S3 Object Lock archive (D7); OpenTelemetry later.", "built", "Pluggable"]
+  ];
+  (function () {
+    var box = document.getElementById("concepts");
+    CONCEPTS.forEach(function (c) {
+      var d = document.createElement("div"); d.className = "concept";
+      var k = document.createElement("div"); k.className = "k";
+      var b = document.createElement("b"); b.textContent = c[0];
+      var p0 = document.createElement("span"); p0.className = "pill " + STATUS[c[3]]; p0.textContent = c[4];
+      k.appendChild(b); k.appendChild(p0);
+      var q = document.createElement("span"); q.className = "muted"; q.style.fontSize = ".84rem"; q.style.fontFamily = "var(--f-mono)"; q.textContent = c[1];
+      var p = document.createElement("p"); p.textContent = c[2];
+      d.appendChild(k); d.appendChild(q); d.appendChild(p); box.appendChild(d);
+    });
+  })();
+  document.getElementById("cfg").textContent = [
+    "version: 2",
+    "mode: enforce                        # enforce | monitor (shadow mode)",
+    "",
+    "providers:                           # credentials are named, never written here",
+    "  anthropic: { type: anthropic, api_key_env: ANTHROPIC_API_KEY }",
+    "  bedrock:   { type: bedrock, region: us-east-1 }     # standard AWS credential chain",
+    "",
+    "models:                              # public name -> provider + upstream ID",
+    "  claude:     { provider: anthropic, upstream_model: claude-opus-5-5 }",
+    "  claude-aws: { provider: bedrock,   upstream_model: anthropic.claude-opus-5-5 }",
+    "",
+    "profiles:",
+    "  support_agent:",
+    "    models: [claude, claude-aws]",
+    "    defenses:",
+    "      - injection",
+    "      - dlp",
+    "      - exfil",
+    "      - { id: guard_model, mode: observe, required: false }",
+    "      - id: tool_policy",
+    "        config:",
+    "          default: deny",
+    "          rules:",
+    "            search_kb:  { action: allow }",
+    "            get_order:  { action: allow }",
+    "            send_email: { action: require_approval }",
+    "    enforcement:",
+    "      input:   { block_at: high }",
+    "      output:  { block_at: high, redact: [secret, pii, canary, exfil_link] }",
+    "      history: { on_new_flag: replace_drop_thinking }  # or block; annotate after D6",
+    "      server_tools: { allow: [] }                      # Claude's built-in tools: off",
+    "    responders:",
+    "      rate_limit:      { requests_per_minute: 60 }",
+    "      circuit_breaker: { window_seconds: 300, max_flagged_requests: 5 }",
+    "      approvals:       { ttl_seconds: 600, max_pending: 1000 }",
+    "",
+    "default_profile: support_agent",
+    "bindings:",
+    "  - { api_key_env: SUPPORT_CLIENT_KEY, profile: support_agent }",
+    "",
+    "sinks:",
+    "  - { id: audit_file, path: /data/audit.jsonl, content: none }",
+    "  - { id: webhook, url_env: ALERT_WEBHOOK_URL, min_severity: high }",
+    "",
+    "state: { backend: dynamodb, table: agentshield-state, region: us-east-1 }   # memory | sqlite | dynamodb (D6)"
+  ].join("\n");
+
+  // ------------------------------------------------------------------ one diagram instance
+  function makeDiagram(host) {
+    var view = host.dataset.view, pid = host.dataset.id, after = view === "after";
+    host.appendChild(document.getElementById("dg-tpl").content.cloneNode(true));
+    var R = function (k) { return host.querySelector('[data-r="' + k + '"]'); };
+    var svg = host.querySelector("svg");
+    svg.setAttribute("aria-label", after ? "Cloud architecture with AgentShield defense layers" : "Cloud architecture of the chatbot before AgentShield");
+    host.querySelectorAll("[data-ov]").forEach(function (inp) { inp.id = pid + "-" + inp.dataset.ov; });
+    var mode = "api", step = -1, selected = null;
+
+    function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+    function tx(attrs, s, parent) { var e = el("text", attrs, parent); e.textContent = s; return e; }
+
+    var defs = el("defs", {}, svg);
+    var mk = el("marker", { id: "ah-" + pid, viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", "class": "ah" }, mk);
+
+    el("rect", { x: 165, y: 20, width: 900, height: after ? 850 : 745, rx: 14, "class": "z-aws" }, svg);
+    tx({ x: 180, y: 34, "class": "zlabel" }, "CLOUD ACCOUNT · REGION (AWS EXAMPLE)", svg);
+    el("rect", { x: 185, y: 112, width: 865, height: 530, rx: 12, "class": "z-vpc" }, svg);
+    tx({ x: 200, y: 127, "class": "zlabel" }, "VPC", svg);
+    el("rect", { x: 200, y: 134, width: 140, height: 494, rx: 8, "class": "z-sub" }, svg);
+    tx({ x: 210, y: 620, "class": "zlabel" }, "PUBLIC SUBNETS", svg);
+    el("rect", { x: 355, y: 134, width: 520, height: 494, rx: 8, "class": "z-sub" }, svg);
+    tx({ x: 365, y: 620, "class": "zlabel" }, "CONTAINER CLUSTER · PRIVATE SUBNETS", svg);
+    el("rect", { x: 885, y: 300, width: 150, height: 328, rx: 8, "class": "z-int" }, svg);
+    tx({ x: 895, y: 620, "class": "zlabel" }, "INTERNAL SYSTEMS", svg);
+    tx({ x: 185, y: 660, "class": "zlabel" }, "REGIONAL SERVICES", svg);
+    tx({ x: 1085, y: 128, "class": "zlabel" }, "INTERNET", svg);
+    if (after) {
+      el("rect", { x: 175, y: 765, width: 685, height: 100, rx: 10, "class": "z-ops" }, svg);
+      tx({ x: 870, y: 820, "class": "zlabel" }, "SECURITY OPERATIONS (D7)", svg);
+    } else {
+      svg.setAttribute("viewBox", "0 0 1250 775");
+    }
+
+    var edgeEls = {}, labelEls = {};
+    function visibleEdge(k) { var e = E[k]; return (!e.m || e.m === (after ? "a" : "b")) && (!e.pr || e.pr === (mode === "bedrock" ? "bed" : "api")); }
+    Object.keys(E).forEach(function (k) {
+      var e = E[k];
+      if (e.m && e.m !== (after ? "a" : "b")) return;
+      edgeEls[k] = el("polyline", { points: e.p.map(function (p) { return p.join(","); }).join(" "), "class": "edge", "marker-end": "url(#ah-" + pid + ")" }, svg);
+      if (e.l) labelEls[k] = tx({ x: e.l[1], y: e.l[2], "class": "elabel" }, e.l[0], svg);
+    });
+
+    var nodeEls = {};
+    Object.keys(N).forEach(function (id) {
+      var n = N[id], b = n.b;
+      if (n.def && !after) return;
+      var shield = n.def || (after && n.defA);   // defA: an existing service that also carries a defense layer
+      var g = el("g", { "class": "node" + (n.ext ? " ext" : "") + (shield ? " def" : ""), tabindex: "0", role: "button", "aria-label": n.t }, svg);
+      el("rect", { x: b[0], y: b[1], width: b[2], height: b[3], rx: 8, "class": "box" }, g);
+      tx({ x: b[0] + 12, y: b[1] + 21, "class": "t" }, n.t, g);
+      ((after && n.sA) || n.s).forEach(function (s, i) { tx({ x: b[0] + 12, y: b[1] + 38 + i * 16, "class": "s" }, s, g); });
+      if (shield) {
+        var c = el("g", { "class": "idchip" }, g);
+        var cy = b[2] < 120 ? b[1] + b[3] - 23 : b[1] + 7;   // narrow boxes: chip at the bottom so the title stays readable
+        el("rect", { x: b[0] + b[2] - 32, y: cy, width: 24, height: 16, rx: 4 }, c);
+        tx({ x: b[0] + b[2] - 20, y: cy + 12, "text-anchor": "middle" }, n.id, c);
+      }
+      g.addEventListener("click", function () { inspect(id); });
+      g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); inspect(id); } });
+      nodeEls[id] = g;
+    });
+
+    var tbBadges = TB.map(function (t) { var g = el("g", { "class": "badge tb" }, svg); el("circle", { r: 13 }, g); tx({ "text-anchor": "middle", dy: "4" }, t.id, g); return g; });
+    UN.forEach(function (u) {
+      var g = el("g", { "class": "badge un", transform: "translate(" + u.at[0] + "," + u.at[1] + ")" }, svg);
+      el("rect", { x: -14, y: -10, width: 28, height: 20, rx: 4 }, g); tx({ "text-anchor": "middle", dy: "4" }, u.id, g);
+    });
+
+    function apply() {
+      var bed = mode === "bedrock";
+      Object.keys(edgeEls).forEach(function (k) {
+        var v = visibleEdge(k);
+        edgeEls[k].classList.toggle("gone", !v);
+        if (labelEls[k]) labelEls[k].classList.toggle("gone", !v);
+      });
+      nodeEls.claude.classList.toggle("off", bed);
+      TB.forEach(function (t, i) {
+        var at = after ? (bed && t.at.aB) || t.at.a || t.at.b : (bed && t.at.bB) || t.at.b;
+        tbBadges[i].setAttribute("transform", "translate(" + at[0] + "," + at[1] + ")");
+      });
+      host.querySelectorAll("[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === mode)); });
+      if (step >= 0) showStep(step); else showAll();
+    }
+    host.querySelectorAll("[data-mode]").forEach(function (b) { b.addEventListener("click", function () { mode = b.dataset.mode; apply(); }); });
+    host.querySelectorAll("[data-ov]").forEach(function (inp) { inp.addEventListener("change", function () { svg.classList.toggle("show-" + inp.dataset.ov, inp.checked); }); });
+
+    var list = R("steps");
+    STEPS.forEach(function (s, i) {
+      var li = document.createElement("li"); var b = document.createElement("button"); b.type = "button"; b.textContent = s.t;
+      b.addEventListener("click", function () { showStep(i); });
+      li.appendChild(b); list.appendChild(li);
+    });
+    function clearHl() {
+      Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("hl"); });
+      Object.keys(edgeEls).forEach(function (k) { edgeEls[k].classList.remove("hl"); });
+    }
+    function pick(s, base) {
+      var bed = mode === "bedrock";
+      if (after && bed && s[base + "AB"]) return s[base + "AB"];
+      if (after && s[base + "A"]) return s[base + "A"];
+      if (bed && s[base + "B"]) return s[base + "B"];
+      return s[base];
+    }
+    function showStep(i) {
+      step = i; clearHl();
+      var s = STEPS[i];
+      svg.classList.add("walking");
+      pick(s, "n").forEach(function (id) { if (nodeEls[id]) nodeEls[id].classList.add("hl"); });
+      pick(s, "e").forEach(function (id) { if (edgeEls[id] && visibleEdge(id)) edgeEls[id].classList.add("hl"); });
+      var cap = R("caption"); cap.innerHTML = "";
+      var b = document.createElement("b"); b.textContent = (i + 1) + ". " + s.t; cap.appendChild(b);
+      var p = document.createElement("span"); p.textContent = s.x; cap.appendChild(p);
+      if (s.c) { var pre = document.createElement("pre"); pre.textContent = s.c; cap.appendChild(pre); }
+      if (after && s.checks) {
+        var ul = document.createElement("ul"); ul.className = "checks";
+        s.checks.forEach(function (c) {
+          if (c[2] && c[2] !== mode) return;
+          var li = document.createElement("li"); var id = document.createElement("span"); id.className = "id"; id.textContent = c[0];
+          var t = document.createElement("span"); t.textContent = c[1]; li.appendChild(id); li.appendChild(t); ul.appendChild(li);
+        });
+        cap.appendChild(ul);
+      } else if (!after && s.checks) {
+        var none = document.createElement("span"); none.className = "muted"; none.textContent = "Nothing checks this hop without AgentShield. Part 2 shows the layers that act here."; cap.appendChild(none);
+      }
+      list.querySelectorAll("button").forEach(function (btn, k) { if (k === i) btn.setAttribute("aria-current", "step"); else btn.removeAttribute("aria-current"); });
+      R("prev").disabled = i <= 0;
+      R("next").textContent = i >= STEPS.length - 1 ? "Start over" : "Next step";
+    }
+    function showAll() {
+      step = -1; clearHl(); svg.classList.remove("walking");
+      var cap = R("caption"); cap.innerHTML = "";
+      var b = document.createElement("b"); b.textContent = after ? "With AgentShield" : "The system as deployed"; cap.appendChild(b);
+      var p = document.createElement("span");
+      p.textContent = after
+        ? "Green boxes are the defense layers D1 to D7. Step through one customer question to see which layer checks what at each hop."
+        : "Step through one customer question from sign-in to answer. Each step highlights the services and connections involved. Turn on the overlays to see where trust changes and where untrusted text gets in.";
+      cap.appendChild(p);
+      list.querySelectorAll("button").forEach(function (btn) { btn.removeAttribute("aria-current"); });
+      R("prev").disabled = true;
+      R("next").textContent = "Start";
+    }
+    R("next").addEventListener("click", function () { showStep(step >= STEPS.length - 1 ? 0 : step + 1); });
+    R("prev").addEventListener("click", function () { if (step > 0) showStep(step - 1); });
+    R("clear").addEventListener("click", showAll);
+
+    var TRUST = { un: ["Untrusted", "tp-un"], semi: ["Holds outside data", "tp-semi"], in: ["Team-controlled", "tp-in"] };
+    function inspect(id) {
+      selected = id;
+      var n = N[id];
+      Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.toggle("sel", k === id); });
+      var dl = R("i-dl"); dl.innerHTML = "";
+      function row(k, v, pill) {
+        var dt = document.createElement("dt"); dt.textContent = k; var dd = document.createElement("dd");
+        if (pill) { var s = document.createElement("span"); s.className = "pill " + pill; s.textContent = v; dd.appendChild(s); } else dd.textContent = v;
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+      if (n.def) {
+        var d = DBY[n.id];
+        R("i-title").textContent = d.id + " · " + d.name;
+        R("i-desc").textContent = d.what;
+        row("Where", d.where); row("Layers", d.layers); row("Covers", d.covers);
+        row("Note", d.note);
+        return;
+      }
+      R("i-title").textContent = n.t;
+      R("i-desc").textContent = (after && n.dA) || n.d;
+      row("Trust", TRUST[n.trust][0], TRUST[n.trust][1]);
+      row("Holds", (after && n.holdsA) || n.holds);
+      row(after ? "If abused now" : "If abused", (after && n.gainA) || n.gain);
+    }
+
+    apply();
+    inspect(after ? "llmgw" : "app");
+  }
+
+  document.querySelectorAll(".dg").forEach(makeDiagram);
+})();
+</script>
+
+</body>
+</html>
